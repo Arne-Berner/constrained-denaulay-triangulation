@@ -1,3 +1,5 @@
+pub mod point_bin_grid;
+pub mod triangle_set;
 use bevy::prelude::*;
 
 fn main() {
