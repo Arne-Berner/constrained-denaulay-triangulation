@@ -8,29 +8,34 @@ fn main() {
         .run();
 }
 
-fn setup(mut commands: Commands, asset_server: Res<AssetServer>) {
+fn setup(mut commands: Commands) {
     commands.spawn(Camera2dBundle::default());
     // text
     commands.spawn(TextBundle::from_section(
         "Hold 'Left' or 'Right' to change the line width",
         TextStyle {
-            font: asset_server.load("fonts/FiraMono-Medium.ttf"),
             font_size: 24.,
             color: Color::WHITE,
+            ..default()
         },
     ));
 }
 
-fn system(mut gizmos: Gizmos) {
-    gizmos.line_gradient_2d(Vec2::Y , Vec2::splat(-80.), Color::RED, Color::SILVER);
 
-    // Triangle
-    gizmos.linestrip_gradient_2d([
-        (Vec2::Y * 300., Color::BLUE),
-        (Vec2::new(-255., -155.), Color::RED),
-        (Vec2::new(255., -155.), Color::GREEN),
-        (Vec2::Y * 300., Color::YELLOW),
-    ]);
+fn system(mut gizmos: Gizmos) {
+    let _adjacent_triangles = ();
+    let _adjacent_edges = ();
+    let points = [
+        (Vec2::new(1., 0.) * 100., Color::WHITE),
+        (Vec2::new(0., 1.5) * 100., Color::WHITE),
+        (Vec2::new(-1., 1.) * 100., Color::WHITE),
+        (Vec2::new(-1., -1.) * 100., Color::WHITE),
+        (Vec2::new(1., 0.) * 100., Color::WHITE),
+    ];
+    gizmos.line_gradient_2d(Vec2::Y, Vec2::splat(-80.), Color::RED, Color::SILVER);
+
+    //pointcloud
+    gizmos.linestrip_gradient_2d(points);
 }
 
 fn update_config(mut config: ResMut<GizmoConfig>, keyboard: Res<Input<KeyCode>>, time: Res<Time>) {
