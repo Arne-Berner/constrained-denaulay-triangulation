@@ -304,304 +304,304 @@ namespace Game.Utils.Triangulation
             }
         }
 
-        /// <summary>
-        /// Calculates which edges of the triangulation intersect with a proposed line segment AB.
-        /// </summary>
-        /// <param name="lineEndpointA">The first point of the line segment.</param>
-        /// <param name="lineEndpointB">The second point of the line segment.</param>
-        /// <param name="startTriangle">The index of the triangle from which to start searching for intersections.</param>
-        /// <param name="intersectingEdges">The list where the intersected triangle edges will be added. No elements will be removed from this list.</param>
-        public void GetIntersectingEdges(Vector2 lineEndpointA, Vector2 lineEndpointB, int startTriangle, List<DelaunayTriangleEdge> intersectingEdges)
-        {
-            bool isTriangleContainingBFound = false;
-            int triangleIndex = startTriangle;
+/// <summary>
+/// Calculates which edges of the triangulation intersect with a proposed line segment AB.
+/// </summary>
+/// <param name="lineEndpointA">The first point of the line segment.</param>
+/// <param name="lineEndpointB">The second point of the line segment.</param>
+/// <param name="startTriangle">The index of the triangle from which to start searching for intersections.</param>
+/// <param name="intersectingEdges">The list where the intersected triangle edges will be added. No elements will be removed from this list.</param>
+public void GetIntersectingEdges(Vector2 lineEndpointA, Vector2 lineEndpointB, int startTriangle, List<DelaunayTriangleEdge> intersectingEdges)
+{
+    bool isTriangleContainingBFound = false;
+    int triangleIndex = startTriangle;
 
-            while (!isTriangleContainingBFound)
+    while (!isTriangleContainingBFound)
+    {
+        //DrawTriangle(triangleIndex, Color.green);
+
+        bool hasCrossedEdge = false;
+        int tentativeAdjacentTriangle = NO_ADJACENT_TRIANGLE;
+
+        for (int i = 0; i < 3; ++i)
+        {
+            if (m_points[m_triangleVertices[triangleIndex * 3 + i]] == lineEndpointB ||
+                m_points[m_triangleVertices[triangleIndex * 3 + (i + 1) % 3]] == lineEndpointB)
             {
-                //DrawTriangle(triangleIndex, Color.green);
-
-                bool hasCrossedEdge = false;
-                int tentativeAdjacentTriangle = NO_ADJACENT_TRIANGLE;
-
-                for (int i = 0; i < 3; ++i)
-                {
-                    if (m_points[m_triangleVertices[triangleIndex * 3 + i]] == lineEndpointB ||
-                        m_points[m_triangleVertices[triangleIndex * 3 + (i + 1) % 3]] == lineEndpointB)
-                    {
-                        isTriangleContainingBFound = true;
-                        break;
-                    }
-
-                    if (MathUtils.IsPointToTheRightOfEdge(m_points[m_triangleVertices[triangleIndex * 3 + i]], m_points[m_triangleVertices[triangleIndex * 3 + (i + 1) % 3]], lineEndpointB))
-                    {
-                        tentativeAdjacentTriangle = i;
-
-                        //Debug.DrawLine(m_points[m_triangleVertices[triangleIndex * 3 + i]], m_points[m_triangleVertices[triangleIndex * 3 + (i + 1) % 3]], Color.green, 10.0f);
-
-                        Vector2 intersectionPoint;
-
-                        if (MathUtils.IntersectionBetweenLines(m_points[m_triangleVertices[triangleIndex * 3 + i]],
-                                                               m_points[m_triangleVertices[triangleIndex * 3 + (i + 1) % 3]],
-                                                               lineEndpointA,
-                                                               lineEndpointB,
-                                                               out intersectionPoint))
-                        {
-                            hasCrossedEdge = true;
-
-                            intersectingEdges.Add(new DelaunayTriangleEdge(NOT_FOUND, NOT_FOUND, m_triangleVertices[triangleIndex * 3 + i], m_triangleVertices[triangleIndex * 3 + (i + 1) % 3]));
-
-                            //Debug.DrawLine(m_points[m_triangleVertices[triangleIndex * 3 + i]], m_points[m_triangleVertices[triangleIndex * 3 + (i + 1) % 3]], Color.yellow, 10.0f);
-                            //const float xlineLength = 0.008f;
-                            //Debug.DrawRay(intersectionPoint - new Vector2(xlineLength * 0.5f, xlineLength * 0.5f), new Vector2(xlineLength, xlineLength), Color.red, 10.0f);
-                            //Debug.DrawRay(intersectionPoint + new Vector2(-xlineLength * 0.5f, xlineLength * 0.5f), new Vector2(xlineLength, -xlineLength), Color.red, 10.0f);
-
-                            // The point is in the exterior of the triangle (vertices are sorted CCW, the right side is always the exterior from the perspective of the A->B edge)
-                            triangleIndex = m_adjacentTriangles[triangleIndex * 3 + i];
-
-                            break;
-                        }
-
-                    }
-                }
-
-                // Continue searching at a different adjacent triangle
-                if (!hasCrossedEdge)
-                {
-                    triangleIndex = m_adjacentTriangles[triangleIndex * 3 + tentativeAdjacentTriangle];
-                }
-            }
-        }
-
-        /// <summary>
-        /// Gets a point by its index.
-        /// </summary>
-        /// <param name="pointIndex">The index of the point.</param>
-        /// <returns>The point that corresponds to the index.</returns>
-        public Vector2 GetPointByIndex(int pointIndex)
-        {
-            return m_points[pointIndex];
-        }
-
-        /// <summary>
-        /// Gets the index of a point, if there is any that coincides with it in the triangulation.
-        /// </summary>
-        /// <param name="point">The point that is expected to exist already.</param>
-        /// <returns>The index of the point. If the point does not exist, -1 is returned.</returns>
-        public int GetIndexOfPoint(Vector2 point)
-        {
-            int index = 0;
-
-            while(index < m_points.Count && m_points[index] != point)
-            {
-                ++index;
+                isTriangleContainingBFound = true;
+                break;
             }
 
-            return index == m_points.Count ? -1 : index;
-        }
-
-        /// <summary>
-        /// Given an edge AB, it searches for the triangle that has an edge with the same vertices in the same order.
-        /// </summary>
-        /// <remarks>
-        /// Remember that the vertices of a triangle are sorted counter-clockwise.
-        /// </remarks>
-        /// <param name="edgeVertexA">The index of the first vertex of the edge.</param>
-        /// <param name="edgeVertexB">The index of the second vertex of the edge.</param>
-        /// <returns>The data of the triangle.</returns>
-        public DelaunayTriangleEdge FindTriangleThatContainsEdge(int edgeVertexA, int edgeVertexB)
-        {
-            DelaunayTriangleEdge foundTriangle = new DelaunayTriangleEdge(NOT_FOUND, NOT_FOUND, edgeVertexA, edgeVertexB);
-
-            for(int i = 0; i < TriangleCount; ++i)
+            if (MathUtils.IsPointToTheRightOfEdge(m_points[m_triangleVertices[triangleIndex * 3 + i]], m_points[m_triangleVertices[triangleIndex * 3 + (i + 1) % 3]], lineEndpointB))
             {
-                for(int j = 0; j < 3; ++j)
+                tentativeAdjacentTriangle = i;
+
+                //Debug.DrawLine(m_points[m_triangleVertices[triangleIndex * 3 + i]], m_points[m_triangleVertices[triangleIndex * 3 + (i + 1) % 3]], Color.green, 10.0f);
+
+                Vector2 intersectionPoint;
+
+                if (MathUtils.IntersectionBetweenLines(m_points[m_triangleVertices[triangleIndex * 3 + i]],
+                                                       m_points[m_triangleVertices[triangleIndex * 3 + (i + 1) % 3]],
+                                                       lineEndpointA,
+                                                       lineEndpointB,
+                                                       out intersectionPoint))
                 {
-                    if(m_triangleVertices[i * 3 + j] == edgeVertexA && m_triangleVertices[i * 3 + (j + 1) % 3] == edgeVertexB)
-                    {
-                        foundTriangle.TriangleIndex = i;
-                        foundTriangle.EdgeIndex = j;
-                        break;
-                    }
-                }
-            }
+                    hasCrossedEdge = true;
 
-            return foundTriangle;
-        }
+                    intersectingEdges.Add(new DelaunayTriangleEdge(NOT_FOUND, NOT_FOUND, m_triangleVertices[triangleIndex * 3 + i], m_triangleVertices[triangleIndex * 3 + (i + 1) % 3]));
 
-        /// <summary>
-        /// Given a point, it searches for a triangle that contains it.
-        /// </summary>
-        /// <param name="point">The point expected to be contained by a triangle.</param>
-        /// <param name="startTriangle">The index of the first triangle to check.</param>
-        /// <returns>The index of the triangle that contains the point.</returns>
-        public int FindTriangleThatContainsPoint(Vector2 point, int startTriangle)
-        { 
-            bool isTriangleFound = false;
-            int triangleIndex = startTriangle;
-            int checkedTriangles = 0; 
+                    //Debug.DrawLine(m_points[m_triangleVertices[triangleIndex * 3 + i]], m_points[m_triangleVertices[triangleIndex * 3 + (i + 1) % 3]], Color.yellow, 10.0f);
+                    //const float xlineLength = 0.008f;
+                    //Debug.DrawRay(intersectionPoint - new Vector2(xlineLength * 0.5f, xlineLength * 0.5f), new Vector2(xlineLength, xlineLength), Color.red, 10.0f);
+                    //Debug.DrawRay(intersectionPoint + new Vector2(-xlineLength * 0.5f, xlineLength * 0.5f), new Vector2(xlineLength, -xlineLength), Color.red, 10.0f);
 
-            while(!isTriangleFound && checkedTriangles < TriangleCount)
-            {
-                isTriangleFound = true;
+                    // The point is in the exterior of the triangle (vertices are sorted CCW, the right side is always the exterior from the perspective of the A->B edge)
+                    triangleIndex = m_adjacentTriangles[triangleIndex * 3 + i];
 
-                for (int i = 0; i < 3; ++i)
-                {
-                    if (MathUtils.IsPointToTheRightOfEdge(m_points[m_triangleVertices[triangleIndex * 3 + i]], m_points[m_triangleVertices[triangleIndex * 3 + (i + 1) % 3]], point))
-                    {
-                        // The point is in the exterior of the triangle (vertices are sorted CCW, the right side is always the exterior from the perspective of the A->B edge)
-                        triangleIndex = m_adjacentTriangles[triangleIndex * 3 + i];
-
-                        isTriangleFound = false;
-                        break;
-                    }
-                }
-
-                checkedTriangles++;
-            }
-
-            if(checkedTriangles >= TriangleCount && TriangleCount > 1)
-            {
-                Debug.LogError("Unable to find a triangle that contains the point (" + point.ToString("F6") + "), starting at triangle " + startTriangle + ". Are you generating very small triangles?");
-            }
-
-            return triangleIndex;
-        }
-
-        /// <summary>
-        /// Given an edge AB, it searches for a triangle that contains the first point and the beginning of the edge.
-        /// </summary>
-        /// <param name="endpointAIndex">The index of the first point.</param>
-        /// <param name="endpointBIndex">The index of the second point.</param>
-        /// <returns>The index of the triangle that contains the first line endpoint.</returns>
-        public int FindTriangleThatContainsLineEndpoint(int endpointAIndex, int endpointBIndex)
-        {
-            List<int> trianglesWithEndpoint = new List<int>();
-            GetTrianglesWithVertex(endpointAIndex, trianglesWithEndpoint);
-
-            int foundTriangle = NOT_FOUND;
-            Vector2 endpointA = m_points[endpointAIndex];
-            Vector2 endpointB = m_points[endpointBIndex];
-            //Debug.DrawLine(endpointA + Vector2.up * 0.01f, endpointB + Vector2.up * 0.01f, Color.yellow, 10.0f);
-
-            for (int i = 0; i < trianglesWithEndpoint.Count; ++i)
-            {
-                //DelaunayTriangle triangleDebug = GetTriangle(trianglesWithEndpoint[i]);
-                //List<int> pointsDebug = triangleDebug.DebugP;
-
-                int vertexPositionInTriangle = m_triangleVertices[trianglesWithEndpoint[i] * 3] == endpointAIndex ? 0 
-                                                                                                                  : m_triangleVertices[trianglesWithEndpoint[i] * 3 + 1] == endpointAIndex ? 1 
-                                                                                                                                                                                           : 2;
-                Vector2 triangleEdgePoint1 = m_points[m_triangleVertices[trianglesWithEndpoint[i] * 3 + (vertexPositionInTriangle + 1) % 3]];
-                Vector2 triangleEdgePoint2 = m_points[m_triangleVertices[trianglesWithEndpoint[i] * 3 + (vertexPositionInTriangle + 2) % 3]];
-
-                // Is the line in the angle between the 2 contiguous edges of the triangle?
-                if (MathUtils.IsPointToTheRightOfEdge(triangleEdgePoint1, endpointA, endpointB) &&
-                    MathUtils.IsPointToTheRightOfEdge(endpointA, triangleEdgePoint2, endpointB))
-                {
-                    foundTriangle = trianglesWithEndpoint[i];
                     break;
                 }
+
             }
-            
-            return foundTriangle;
         }
 
-        /// <summary>
-        /// Stores the adjacency data of a triangle.
-        /// </summary>
-        /// <param name="triangleIndex">The index of the triangle whose adjacency data is to be written.</param>
-        /// <param name="adjacentsToTriangle">The adjacency data, 3 triangle indices sorted counter-clockwise.</param>
-        public void SetTriangleAdjacency(int triangleIndex, int* adjacentsToTriangle)
+        // Continue searching at a different adjacent triangle
+        if (!hasCrossedEdge)
         {
-            for(int i = 0; i < 3; ++i)
-            {
-                m_adjacentTriangles[triangleIndex * 3 + i] = adjacentsToTriangle[i];
-            }
+            triangleIndex = m_adjacentTriangles[triangleIndex * 3 + tentativeAdjacentTriangle];
         }
+    }
+}
 
-        /// <summary>
-        /// Given a triangle, it searches for an adjacent triangle and replaces it with another adjacent triangle.
-        /// </summary>
-        /// <param name="triangleIndex">The index of the triangle whose adjacency data is to be modified.</param>
-        /// <param name="oldAdjacentTriangle">The index of the adjacent triangle to be replaced.</param>
-        /// <param name="newAdjacentTriangle">The new index of an adjacent triangle that will replace the existing one.</param>
-        public void ReplaceAdjacent(int triangleIndex, int oldAdjacentTriangle, int newAdjacentTriangle)
+/// <summary>
+/// Gets a point by its index.
+/// </summary>
+/// <param name="pointIndex">The index of the point.</param>
+/// <returns>The point that corresponds to the index.</returns>
+public Vector2 GetPointByIndex(int pointIndex)
+{
+    return m_points[pointIndex];
+}
+
+/// <summary>
+/// Gets the index of a point, if there is any that coincides with it in the triangulation.
+/// </summary>
+/// <param name="point">The point that is expected to exist already.</param>
+/// <returns>The index of the point. If the point does not exist, -1 is returned.</returns>
+public int GetIndexOfPoint(Vector2 point)
+{
+    int index = 0;
+
+    while(index < m_points.Count && m_points[index] != point)
+    {
+        ++index;
+    }
+
+    return index == m_points.Count ? -1 : index;
+}
+
+/// <summary>
+/// Given an edge AB, it searches for the triangle that has an edge with the same vertices in the same order.
+/// </summary>
+/// <remarks>
+/// Remember that the vertices of a triangle are sorted counter-clockwise.
+/// </remarks>
+/// <param name="edgeVertexA">The index of the first vertex of the edge.</param>
+/// <param name="edgeVertexB">The index of the second vertex of the edge.</param>
+/// <returns>The data of the triangle.</returns>
+public DelaunayTriangleEdge FindTriangleThatContainsEdge(int edgeVertexA, int edgeVertexB)
+{
+    DelaunayTriangleEdge foundTriangle = new DelaunayTriangleEdge(NOT_FOUND, NOT_FOUND, edgeVertexA, edgeVertexB);
+
+    for(int i = 0; i < TriangleCount; ++i)
+    {
+        for(int j = 0; j < 3; ++j)
         {
-            for(int i = 0; i < 3; ++i)
+            if(m_triangleVertices[i * 3 + j] == edgeVertexA && m_triangleVertices[i * 3 + (j + 1) % 3] == edgeVertexB)
             {
-                if(m_adjacentTriangles[triangleIndex * 3 + i] == oldAdjacentTriangle)
-                {
-                    m_adjacentTriangles[triangleIndex * 3 + i] = newAdjacentTriangle;
-                }
+                foundTriangle.TriangleIndex = i;
+                foundTriangle.EdgeIndex = j;
+                break;
             }
         }
+    }
 
-        /// <summary>
-        /// Replaces all the data of a given triangle. The index of the triangle will remain the same.
-        /// </summary>
-        /// <param name="triangleIndex">The index of the triangle whose data is to be replaced.</param>
-        /// <param name="newTriangle">The new data that will replace the existing one.</param>
-        public void ReplaceTriangle(int triangleToReplace, DelaunayTriangle newTriangle)
+    return foundTriangle;
+}
+
+/// <summary>
+/// Given a point, it searches for a triangle that contains it.
+/// </summary>
+/// <param name="point">The point expected to be contained by a triangle.</param>
+/// <param name="startTriangle">The index of the first triangle to check.</param>
+/// <returns>The index of the triangle that contains the point.</returns>
+public int FindTriangleThatContainsPoint(Vector2 point, int startTriangle)
+{ 
+    bool isTriangleFound = false;
+    int triangleIndex = startTriangle;
+    int checkedTriangles = 0; 
+
+    while(!isTriangleFound && checkedTriangles < TriangleCount)
+    {
+        isTriangleFound = true;
+
+        for (int i = 0; i < 3; ++i)
         {
-            for(int i = 0; i < 3; ++i)
+            if (MathUtils.IsPointToTheRightOfEdge(m_points[m_triangleVertices[triangleIndex * 3 + i]], m_points[m_triangleVertices[triangleIndex * 3 + (i + 1) % 3]], point))
             {
-                m_triangleVertices[triangleToReplace * 3 + i] = newTriangle.p[i];
-                m_adjacentTriangles[triangleToReplace * 3 + i] = newTriangle.adjacent[i];
+                // The point is in the exterior of the triangle (vertices are sorted CCW, the right side is always the exterior from the perspective of the A->B edge)
+                triangleIndex = m_adjacentTriangles[triangleIndex * 3 + i];
+
+                isTriangleFound = false;
+                break;
             }
         }
 
-        public void DrawTriangle(int triangleIndex, Color color)
+        checkedTriangles++;
+    }
+
+    if(checkedTriangles >= TriangleCount && TriangleCount > 1)
+    {
+        Debug.LogError("Unable to find a triangle that contains the point (" + point.ToString("F6") + "), starting at triangle " + startTriangle + ". Are you generating very small triangles?");
+    }
+
+    return triangleIndex;
+}
+
+/// <summary>
+/// Given an edge AB, it searches for a triangle that contains the first point and the beginning of the edge.
+/// </summary>
+/// <param name="endpointAIndex">The index of the first point.</param>
+/// <param name="endpointBIndex">The index of the second point.</param>
+/// <returns>The index of the triangle that contains the first line endpoint.</returns>
+public int FindTriangleThatContainsLineEndpoint(int endpointAIndex, int endpointBIndex)
+{
+    List<int> trianglesWithEndpoint = new List<int>();
+    GetTrianglesWithVertex(endpointAIndex, trianglesWithEndpoint);
+
+    int foundTriangle = NOT_FOUND;
+    Vector2 endpointA = m_points[endpointAIndex];
+    Vector2 endpointB = m_points[endpointBIndex];
+    //Debug.DrawLine(endpointA + Vector2.up * 0.01f, endpointB + Vector2.up * 0.01f, Color.yellow, 10.0f);
+
+    for (int i = 0; i < trianglesWithEndpoint.Count; ++i)
+    {
+        //DelaunayTriangle triangleDebug = GetTriangle(trianglesWithEndpoint[i]);
+        //List<int> pointsDebug = triangleDebug.DebugP;
+
+        int vertexPositionInTriangle = m_triangleVertices[trianglesWithEndpoint[i] * 3] == endpointAIndex ? 0 
+                                                                                                          : m_triangleVertices[trianglesWithEndpoint[i] * 3 + 1] == endpointAIndex ? 1 
+                                                                                                                                                                                   : 2;
+        Vector2 triangleEdgePoint1 = m_points[m_triangleVertices[trianglesWithEndpoint[i] * 3 + (vertexPositionInTriangle + 1) % 3]];
+        Vector2 triangleEdgePoint2 = m_points[m_triangleVertices[trianglesWithEndpoint[i] * 3 + (vertexPositionInTriangle + 2) % 3]];
+
+        // Is the line in the angle between the 2 contiguous edges of the triangle?
+        if (MathUtils.IsPointToTheRightOfEdge(triangleEdgePoint1, endpointA, endpointB) &&
+            MathUtils.IsPointToTheRightOfEdge(endpointA, triangleEdgePoint2, endpointB))
         {
-            for(int i = 0; i < 3; ++i)
-            {
-                Debug.DrawLine(m_points[m_triangleVertices[triangleIndex * 3 + i]], m_points[m_triangleVertices[triangleIndex * 3 + (i + 1) % 3]], color, 10.0f);
-            }
+            foundTriangle = trianglesWithEndpoint[i];
+            break;
         }
+    }
+    
+    return foundTriangle;
+}
 
-        public void LogDump()
+/// <summary>
+/// Stores the adjacency data of a triangle.
+/// </summary>
+/// <param name="triangleIndex">The index of the triangle whose adjacency data is to be written.</param>
+/// <param name="adjacentsToTriangle">The adjacency data, 3 triangle indices sorted counter-clockwise.</param>
+public void SetTriangleAdjacency(int triangleIndex, int* adjacentsToTriangle)
+{
+    for(int i = 0; i < 3; ++i)
+    {
+        m_adjacentTriangles[triangleIndex * 3 + i] = adjacentsToTriangle[i];
+    }
+}
+
+/// <summary>
+/// Given a triangle, it searches for an adjacent triangle and replaces it with another adjacent triangle.
+/// </summary>
+/// <param name="triangleIndex">The index of the triangle whose adjacency data is to be modified.</param>
+/// <param name="oldAdjacentTriangle">The index of the adjacent triangle to be replaced.</param>
+/// <param name="newAdjacentTriangle">The new index of an adjacent triangle that will replace the existing one.</param>
+public void ReplaceAdjacent(int triangleIndex, int oldAdjacentTriangle, int newAdjacentTriangle)
+{
+    for(int i = 0; i < 3; ++i)
+    {
+        if(m_adjacentTriangles[triangleIndex * 3 + i] == oldAdjacentTriangle)
         {
-            for(int i = 0; i < TriangleCount; ++i)
+            m_adjacentTriangles[triangleIndex * 3 + i] = newAdjacentTriangle;
+        }
+    }
+}
+
+/// <summary>
+/// Replaces all the data of a given triangle. The index of the triangle will remain the same.
+/// </summary>
+/// <param name="triangleIndex">The index of the triangle whose data is to be replaced.</param>
+/// <param name="newTriangle">The new data that will replace the existing one.</param>
+public void ReplaceTriangle(int triangleToReplace, DelaunayTriangle newTriangle)
+{
+    for(int i = 0; i < 3; ++i)
+    {
+        m_triangleVertices[triangleToReplace * 3 + i] = newTriangle.p[i];
+        m_adjacentTriangles[triangleToReplace * 3 + i] = newTriangle.adjacent[i];
+    }
+}
+
+public void DrawTriangle(int triangleIndex, Color color)
+{
+    for(int i = 0; i < 3; ++i)
+    {
+        Debug.DrawLine(m_points[m_triangleVertices[triangleIndex * 3 + i]], m_points[m_triangleVertices[triangleIndex * 3 + (i + 1) % 3]], color, 10.0f);
+    }
+}
+
+public void LogDump()
+{
+    for(int i = 0; i < TriangleCount; ++i)
+    {
+        string logEntry = "Triangle " + i + "<color=yellow>(";
+
+        for(int j = 0; j < 3; ++j)
+        {
+            logEntry += m_triangleVertices[i * 3 + j];
+
+            if(j < 2)
             {
-                string logEntry = "Triangle " + i + "<color=yellow>(";
-
-                for(int j = 0; j < 3; ++j)
-                {
-                    logEntry += m_triangleVertices[i * 3 + j];
-
-                    if(j < 2)
-                    {
-                        logEntry += ", ";
-                    }
-                }
-
-                logEntry += ")</color>-A(";
-
-                for (int j = 0; j < 3; ++j)
-                {
-                    logEntry += m_adjacentTriangles[i * 3 + j];
-
-                    if (j < 2)
-                    {
-                        logEntry += ", ";
-                    }
-                }
-
-                logEntry += ")-v(";
-
-                for (int j = 0; j < 3; ++j)
-                {
-                    logEntry += m_points[m_triangleVertices[i * 3 + j]].ToString("F6");
-
-                    if (j < 2)
-                    {
-                        logEntry += ", ";
-                    }
-                }
-
-                logEntry += ")";
-
-                Debug.Log(logEntry);
+                logEntry += ", ";
             }
         }
+
+        logEntry += ")</color>-A(";
+
+        for (int j = 0; j < 3; ++j)
+        {
+            logEntry += m_adjacentTriangles[i * 3 + j];
+
+            if (j < 2)
+            {
+                logEntry += ", ";
+            }
+        }
+
+        logEntry += ")-v(";
+
+        for (int j = 0; j < 3; ++j)
+        {
+            logEntry += m_points[m_triangleVertices[i * 3 + j]].ToString("F6");
+
+            if (j < 2)
+            {
+                logEntry += ", ";
+            }
+        }
+
+        logEntry += ")";
+
+        Debug.Log(logEntry);
+    }
+}
     }
 }

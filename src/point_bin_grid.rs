@@ -36,6 +36,7 @@ impl PointBinGrid {
             bin_index = ((row_index + 1) * self.cells_per_side - column_index - 1) as usize;
         }
 
+        // this should not be able to happen?
         if self.cells.get(bin_index).is_none() {
             self.cells[bin_index] = vec![];
         }
