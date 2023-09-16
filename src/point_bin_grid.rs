@@ -1,14 +1,14 @@
 use bevy::prelude::{Color, Gizmos, Vec2};
 
 pub struct PointBinGrid {
-    cells: Vec<Vec<Vec2>>,
+    pub cells: Vec<Vec<Vec2>>,
     cell_size: Vec2,
     grid_size: Vec2,
-    cells_per_side: u32,
+    cells_per_side: usize,
 }
 
 impl PointBinGrid {
-    pub fn new(cells_per_side: u32, grid_size: Vec2) -> PointBinGrid {
+    pub fn new(cells_per_side: usize, grid_size: Vec2) -> PointBinGrid {
         let cells = vec![vec![]; (cells_per_side * cells_per_side) as usize];
         let cell_size = grid_size / cells_per_side as f32;
         let grid_size = grid_size;
@@ -22,9 +22,9 @@ impl PointBinGrid {
         }
     }
     pub fn add_point(&mut self, new_point: Vec2) {
-        let row_index = (0.99 * self.cells_per_side as f32 * new_point.y / self.grid_size.y) as u32;
+        let row_index = (0.99 * self.cells_per_side as f32 * new_point.y / self.grid_size.y) as usize;
         let column_index =
-            (0.99 * self.cells_per_side as f32 * new_point.x / self.grid_size.x) as u32;
+            (0.99 * self.cells_per_side as f32 * new_point.x / self.grid_size.x) as usize;
 
         // it will be filled like so:
         // 6 7 8 ->
@@ -50,8 +50,8 @@ impl PointBinGrid {
     fn draw_point_addition(
         &self,
         point: Vec2,
-        column_index: u32,
-        row_index: u32,
+        column_index: usize,
+        row_index: usize,
         mut gizmos: Gizmos,
     ) {
         let cell_bottom_left_corner = Vec2::new(

@@ -4,19 +4,20 @@ use crate::math_utils;
 
 /// A 2D triangle.
 pub struct Triangle2D {
+    // TODO make points accessible via "points" method
     /// The first vertex.
-    p0: Vec2,
+    pub p0: Vec2,
 
     /// The second vertex.
-    p1: Vec2,
+    pub p1: Vec2,
 
     /// The third vertex.
-    p2: Vec2,
+    pub p2: Vec2,
 }
 
 impl Triangle2D {
     /// Constructor that receives the 3 vertices.
-    fn new(point0: Vec2, point1: Vec2, point2: Vec2) -> Self {
+    pub fn new(point0: Vec2, point1: Vec2, point2: Vec2) -> Self {
         Self {
             p0: point0,
             p1: point1,
@@ -79,9 +80,9 @@ impl DelaunayTriangleEdge {
 /// Data that describes a triangle and its context in a triangulation.
 pub struct DelaunayTriangle {
     /// The indices of the points that define the triangle.
-    p: [usize; 3],
+    pub p: [usize; 3],
     /// The indices of the triangles that are adjacent.
-    adjacent: [Option<usize>; 3],
+    pub adjacent: [Option<usize>; 3],
 }
 
 impl DelaunayTriangle {
@@ -120,7 +121,7 @@ pub struct DelaunayTriangleSet {
     triangle_vertices: Vec<usize>,
 
     /// The real points in the 2D space.
-    points: Vec<Vec2>,
+    pub points: Vec<Vec2>,
     //TODO does this work better as Option?
     // Indicates that the index of a vertex, edge or triangle is not defined or was not found
     //const NOT_FOUND: usize = -1,
@@ -489,7 +490,7 @@ impl DelaunayTriangleSet {
     /// # Returns
     ///
     /// The index of the point. If the point does not exist, -1 is returned.
-    pub fn get_index_of_point(&self, point: Vec2) -> isize {
+    pub fn get_index_of_point(&self, point: Vec2) -> Option<usize> {
         let mut index = 0;
 
         while index < self.points.len() && self.points[index] != point {
@@ -497,9 +498,9 @@ impl DelaunayTriangleSet {
         }
 
         if index == self.points.len() {
-            -1
+            None
         } else {
-            index as isize
+            Some(index)
         }
     }
 
