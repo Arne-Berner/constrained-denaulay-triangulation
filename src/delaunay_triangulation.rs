@@ -1,6 +1,6 @@
 use bevy::{render::primitives::Aabb, prelude::Vec2};
 
-use crate::{point_bin_grid::PointBinGrid, triangle_set::{DelaunayTriangleSet, Triangle2D}};
+use crate::{point_bin_grid::PointBinGrid, triangle_set::{DelaunayTriangleSet, Triangle2D, DelaunayTriangle, DelaunayTriangleEdge, Edge}, math_utils};
 
 /// Encapsulates the entire constrained Delaunay triangulation algorithm, according to S. W. Sloan's proposal, and stores the resulting triangulation.
 /// Instantiate this struct and call triangulate to obtain the triangulation of a point cloud.
@@ -347,53 +347,286 @@ fn fulfill_delaunay_constraint(&self, adjacent_triangles_to_process: &mut Vec<us
                     continue;
                 }
 
-                int NOT_IN_EDGE_VERTEX_INDEX = (OPPOSITE_TRIANGLE_INDEX + 2) % 3;
-                Vector2 triangleVertexNotInEdge = m_triangleSet.GetPointByIndex(triangle.p[NOT_IN_EDGE_VERTEX_INDEX]);
+                let not_in_edge_vertex_index = (opposite_triangle_index + 2) % 3;
+                let triangle_not_in_edge_vertex = triangle_set.get_point_by_index(triangle.p[not_in_edge_vertex_index]);
 
-                DelaunayTriangle oppositeTriangle = m_triangleSet.GetTriangle(triangle.adjacent[OPPOSITE_TRIANGLE_INDEX]);
-                Triangle2D oppositeTrianglePoints = m_triangleSet.GetTrianglePoints(triangle.adjacent[OPPOSITE_TRIANGLE_INDEX]);
+                let opposite_triangle = triangle_set.get_triangle(triangle.adjacent.[opposite_triangle_index].unwrap());
+                let opposite_triangle_points = triangle_set.get_triangle_points(triangle.adjacent[opposite_triangle_index].unwrap());
 
-                if(MathUtils.IsPointInsideCircumcircle(oppositeTrianglePoints.p0, oppositeTrianglePoints.p1, oppositeTrianglePoints.p2, triangleVertexNotInEdge))
+                if math_utils::is_point_inside_circumcircle(opposite_triangle_points.p0, opposite_triangle_points.p1, opposite_triangle_points.p2, triangle_not_in_edge_vertex)
                 {
                     // Finds the edge of the opposite triangle that is shared with the other triangle, this edge will be swapped
-                    int sharedEdgeVertexLocalIndex = GetSharedEdge(oppositeTriangle, currentTriangleToSwap);
+                    let shared_edge_vertex_index = self.get_shared_edge(opposite_triangle, current_triangle_to_swap);
 
                     // Adds the 2 triangles that were adjacent to the opposite triangle, to be processed too
-                    int oppositeAdjacent0 = oppositeTriangle.adjacent[(sharedEdgeVertexLocalIndex + 1) % 3]; 
-                    if (oppositeAdjacent0 != NO_ADJACENT_TRIANGLE && !adjacentTrianglesToProcess.Contains(oppositeAdjacent0))
-                    {
-                        adjacentTrianglesToProcess.Push(oppositeAdjacent0);
-                        int neighborEdge = GetSharedEdge(m_triangleSet.GetTriangle(oppositeAdjacent0), triangle.adjacent[OPPOSITE_TRIANGLE_INDEX]);
-                        adjacentTriangleEdges.Push(neighborEdge);
+                    if let Some(adjacent) = opposite_triangle.adjacent[(shared_edge_vertex_index + 1) & 3] {
+                        let opposite_adjacent0 = adjacent.clone();
+                        if !adjacent_triangles_to_process.contains(opposite_adjacent0){
+                        adjacent_triangles_to_process.push(opposite_adjacent0);
+                        let neighbor_edge = self.get_shared_edge(triangle_set.get_triangle(opposite_adjacent0), triangle.adjacent[opposite_triangle_index].unwrap());
+                        adjacent_triangle_edges.push(neighbor_edge);
+                        }
+                        if !adjacent_triangles_to_process.contains(opposite_adjacent0)
                     }
 
-                    int oppositeAdjacent1 = oppositeTriangle.adjacent[(sharedEdgeVertexLocalIndex + 2) % 3];
-                    if (oppositeAdjacent1 != NO_ADJACENT_TRIANGLE && !adjacentTrianglesToProcess.Contains(oppositeAdjacent1))
-                    {
-                        adjacentTrianglesToProcess.Push(oppositeAdjacent1);
-                        int neighborEdge = GetSharedEdge(m_triangleSet.GetTriangle(oppositeAdjacent1), triangle.adjacent[OPPOSITE_TRIANGLE_INDEX]);
-                        adjacentTriangleEdges.Push(neighborEdge);
+                    if let Some(adjacent) = opposite_triangle.adjacent[(shared_edge_vertex_index + 2) & 3] {
+                        let opposite_adjacent1 = adjacent.clone();
+                        if !adjacent_triangles_to_process.contains(opposite_adjacent1){
+                        adjacent_triangles_to_process.push(opposite_adjacent1);
+                        let neighbor_edge = self.get_shared_edge(triangle_set.get_triangle(opposite_adjacent1), triangle.adjacent[opposite_triangle_index].unwrap());
+                        adjacent_triangle_edges.push(neighbor_edge);
+                        }
                     }
 
-                    int triangleAdjacent0 = triangle.adjacent[NOT_IN_EDGE_VERTEX_INDEX];
-                    if (triangleAdjacent0 != NO_ADJACENT_TRIANGLE && !adjacentTrianglesToProcess.Contains(triangleAdjacent0))
-                    {
-                        adjacentTrianglesToProcess.Push(triangleAdjacent0);
-                        int neighborEdge = GetSharedEdge(m_triangleSet.GetTriangle(triangleAdjacent0), currentTriangleToSwap);
-                        adjacentTriangleEdges.Push(neighborEdge);
+                    if let Some(adjacent) = triangle.adjacent[not_in_edge_vertex_index] {
+                        let triangle_adjacent0 = adjacent.clone();
+                        if !adjacent_triangles_to_process.contains(&triangle_adjacent0){
+                        adjacent_triangles_to_process.push(triangle_adjacent0);
+                        let neighbor_edge = self.get_shared_edge(triangle_set.get_triangle(triangle_adjacent0), triangle.adjacent[current_triangle_to_swap].unwrap());
+                        adjacent_triangle_edges.push(neighbor_edge);
+                        }
+
                     }
 
-                    int triangleAdjacent1 = triangle.adjacent[(NOT_IN_EDGE_VERTEX_INDEX + 2) % 3];
-                    if (triangleAdjacent1 != NO_ADJACENT_TRIANGLE && !adjacentTrianglesToProcess.Contains(triangleAdjacent1))
-                    {
-                        adjacentTrianglesToProcess.Push(triangleAdjacent1);
-                        int neighborEdge = GetSharedEdge(m_triangleSet.GetTriangle(triangleAdjacent1), currentTriangleToSwap);
-                        adjacentTriangleEdges.Push(neighborEdge);
+                    if let Some(adjacent) = triangle.adjacent[(not_in_edge_vertex_index + 2) % 3]{
+                        let triangle_adjacent1 = adjacent.clone();
+                        if !adjacent_triangles_to_process.contains(&triangle_adjacent1){
+                        adjacent_triangles_to_process.push(triangle_adjacent1);
+                        let neighbor_edge = self.get_shared_edge(triangle_set.get_triangle(triangle_adjacent1), triangle.adjacent[current_triangle_to_swap].unwrap());
+                        adjacent_triangle_edges.push(neighbor_edge);
+                        }
+
                     }
                     
                     // 4.8: Swap edges
-                    SwapEdges(currentTriangleToSwap, triangle, NOT_IN_EDGE_VERTEX_INDEX, oppositeTriangle, sharedEdgeVertexLocalIndex);
+                    swap_edges(current_triangle_to_swap, triangle, not_in_edge_vertex_index, opposite_triangle, shared_edge_vertex_index);
                 }
             }
         }
+
+/// Finds the index of the edge (0 to 2) of a triangle that is shared with another triangle.
+/// 
+/// # Arguments
+/// 
+/// * `triangle` - The triangle whose edge is to be returned.
+/// * `adjacent_triangle` - The index of the adjacent triangle.
+/// 
+/// # Returns
+/// 
+/// The index of the shared edge in the first triangle, from 0 to 2.
+fn get_shared_edge(triangle: &DelaunayTriangle, adjacent_triangle: usize) -> Option<usize> {
+    for shared_edge_vertex_local_index in 0..3 {
+        if let Some(adjacent) = triangle.adjacent[shared_edge_vertex_local_index] {
+            if adjacent == adjacent_triangle{
+            return Some(shared_edge_vertex_local_index);
+            }
+        }
     }
+
+    return None;
+}
+
+/// Given 2 adjacent triangles, it replaces the shared edge with a new edge that joins both opposite vertices. For example, triangles ABC-CBD would become ADC-ABD.
+/// For the main triangle, its shared edge vertex is moved so the new shared edge vertex is 1 position behind / or 2 forward (if it was 1, now the shared edge is 0).
+/// Parameters:
+/// - main_triangle_index: The index of the main triangle.
+/// - triangle: Data about the main triangle.
+/// - not_in_edge_triangle_vertex: The local index of the vertex that is not in the shared edge, in the main triangle.
+/// - opposite_triangle: Data about the triangle that opposes the main triangle.
+/// - opposite_triangle_shared_edge_vertex_local_index: The local index of the vertex where the shared edge begins, in the opposite triangle.
+fn swap_edges(&self, main_triangle_index: usize, main_triangle: DelaunayTriangle, not_in_edge_vertex_local_index: usize, opposite_triangle: &mut DelaunayTriangle, opposite_triangle_shared_edge_vertex_local_index: usize) {
+    let opposite_vertex = (opposite_triangle_shared_edge_vertex_local_index + 2) % 3;
+
+            //           2 _|_ a
+            //       A2 _   |   _
+            //       _      |      _
+            //   0 _     A1 |         _  c (opposite vertex)
+            //       _      |      _
+            //          _   |   _
+            //       A0   _ |_
+            //              |
+            //            1    b
+
+            //           2 _|_ 
+            //       A2 _       _ A1
+            //       _             _
+            //   0 _________A0_______ 1
+            //   a   _             _  c
+            //          _       _
+            //             _ _
+            //              | b
+            //            
+
+    // Only one vertex of each triangle is moved
+    let opposite_triangle_index = main_triangle.adjacent[(not_in_edge_vertex_local_index + 1) % 3];
+    main_triangle.p[(not_in_edge_vertex_local_index + 1) % 3] = opposite_triangle.p[opposite_vertex];
+    opposite_triangle.p[opposite_triangle_shared_edge_vertex_local_index] = main_triangle.p[not_in_edge_vertex_local_index];
+    opposite_triangle.adjacent[opposite_triangle_shared_edge_vertex_local_index] = main_triangle.adjacent[not_in_edge_vertex_local_index];
+    main_triangle.adjacent[not_in_edge_vertex_local_index] = opposite_triangle_index;
+    main_triangle.adjacent[(not_in_edge_vertex_local_index + 1) % 3] = opposite_triangle.adjacent[opposite_vertex];
+    opposite_triangle.adjacent[opposite_vertex] = Some(main_triangle_index);
+
+    let triangle_set = self.triangle_set.expect("There should be a triangle set at this point or this function has been called too early.");
+    triangle_set.replace_triangle(main_triangle_index, main_triangle);
+    triangle_set.replace_triangle(opposite_triangle_index, opposite_triangle);
+
+    // Adjacent triangles are updated too
+    if let Some(main_adjacent) = main_triangle.adjacent[(not_in_edge_vertex_local_index + 1) % 3]{
+        triangle_set.replace_adjacent(main_adjacent, opposite_triangle_index, Some(main_triangle_index));
+    }
+
+    if let Some(opposite_adjacent) = opposite_triangle.adjacent[opposite_triangle_shared_edge_vertex_local_index]{
+        triangle_set.replace_adjacent(opposite_adjacent, Some(main_triangle_index), opposite_triangle_index);
+    }
+}
+
+/// Adds an edge to the triangulation in such a way that it keeps there even if it forms triangles that do not fulfill the Delaunay constraint.
+/// If the edge already exists, nothing will be done.
+/// The order in which the vertices of the edges are provided is important, as the edge may be part of a polygon whose vertices are sorted counterclockwise.
+///
+/// # Arguments
+///
+/// * `endpointAIndex` - The index of the first vertex of the edge, in the existing triangulation.
+/// * `endpointBIndex` - The index of the second vertex of the edge, in the existing triangulation.
+fn add_constrained_edge_to_triangulation(&self, endpoint_a_index: usize, endpoint_b_index: usize) {
+    let triangle_set = self.triangle_set.unwrap();
+            // Detects if the edge already exists
+            if let Some(_) = triangle_set.find_triangle_that_contains_edge(endpoint_a_index, endpoint_b_index)
+                {
+                return;
+            }
+
+            let edge_endpoint_a = triangle_set.get_point_by_index(endpoint_a_index);
+            let edge_endpoint_b = triangle_set.get_point_by_index(endpoint_b_index);
+
+            // 5.3.1: Search for the triangle that contains the beginning of the new edge
+            let triangle_containing_a = triangle_set.find_triangle_that_contains_line_endpoint(endpoint_a_index, endpoint_b_index);
+
+            // 5.3.2: Get all the triangle edges intersected by the constrained edge
+            let intersected_triangle_edges = Vec::<Edge>::new();
+            triangle_set.get_intersecting_edges(edge_endpoint_a, edge_endpoint_b, triangle_containing_a, &mut intersected_triangle_edges);
+
+            let new_edges = Vec::<DelaunayTriangleEdge>::new();
+
+            while (intersected_triangle_edges.len() > 0){
+                DelaunayTriangleEdge currentIntersectedTriangleEdge = intersectedTriangleEdges[intersectedTriangleEdges.Count - 1];
+                intersectedTriangleEdges.RemoveAt(intersectedTriangleEdges.Count - 1);
+
+                // 5.3.3: Form quadrilaterals and swap intersected edges
+                // Deduces the data for both triangles
+                currentIntersectedTriangleEdge = m_triangleSet.FindTriangleThatContainsEdge(currentIntersectedTriangleEdge.EdgeVertexA, currentIntersectedTriangleEdge.EdgeVertexB);
+                DelaunayTriangle intersectedTriangle = m_triangleSet.GetTriangle(currentIntersectedTriangleEdge.TriangleIndex);
+                DelaunayTriangle oppositeTriangle = m_triangleSet.GetTriangle(intersectedTriangle.adjacent[currentIntersectedTriangleEdge.EdgeIndex]);
+                Triangle2D trianglePoints = m_triangleSet.GetTrianglePoints(currentIntersectedTriangleEdge.TriangleIndex);
+
+                // Gets the opposite vertex of adjacent triangle, knowing the fisrt vertex of the shared edge
+                int oppositeVertex = NOT_FOUND;
+
+                //List<int> debugP = intersectedTriangle.DebugP;
+                //List<int> debugA = intersectedTriangle.DebugAdjacent;
+                //List<int> debugP2 = oppositeTriangle.DebugP;
+                //List<int> debugA2 = oppositeTriangle.DebugAdjacent;
+
+                int oppositeSharedEdgeVertex = NOT_FOUND; // The first vertex in the shared edge of the opposite triangle
+
+                for (int j = 0; j < 3; ++j)
+                {
+                    if (oppositeTriangle.p[j] == intersectedTriangle.p[(currentIntersectedTriangleEdge.EdgeIndex + 1) % 3]) // Comparing with the endpoint B of the edge, since the edge AB is BA in the adjacent triangle
+                    {
+                        oppositeVertex = oppositeTriangle.p[(j + 2) % 3];
+                        oppositeSharedEdgeVertex = j;
+                        break;
+                    }
+                }
+
+                Vec2 oppositePoint = m_triangleSet.GetPointByIndex(oppositeVertex);
+
+                if (MathUtils.IsQuadrilateralConvex(trianglePoints.p0, trianglePoints.p1, trianglePoints.p2, oppositePoint))
+                {
+                    // Swap
+                    int notInEdgeTriangleVertex = (currentIntersectedTriangleEdge.EdgeIndex + 2) % 3;
+                    SwapEdges(currentIntersectedTriangleEdge.TriangleIndex, intersectedTriangle, notInEdgeTriangleVertex, oppositeTriangle, oppositeSharedEdgeVertex);
+
+                    // Refreshes triangle data after swapping
+                    intersectedTriangle = m_triangleSet.GetTriangle(currentIntersectedTriangleEdge.TriangleIndex);
+
+                    //oppositeTriangle = m_triangles.GetTriangle(intersectedTriangle.adjacent[(currentIntersectedTriangleEdge.EdgeIndex + 2) % 3]);
+                    //debugP = intersectedTriangle.DebugP;
+                    //debugA = intersectedTriangle.DebugAdjacent;
+                    //debugP2 = oppositeTriangle.DebugP;
+                    //debugA2 = oppositeTriangle.DebugAdjacent;
+
+                    // Check new diagonal against the intersecting edge
+                    Vec2 intersectionPoint;
+                    int newTriangleSharedEdgeVertex = (currentIntersectedTriangleEdge.EdgeIndex + 2) % 3; // Read SwapEdges method to understand the +2
+                    Vec2 newTriangleSharedEdgePointA = m_triangleSet.GetPointByIndex(intersectedTriangle.p[newTriangleSharedEdgeVertex]);
+                    Vec2 newTriangleSharedEdgePointB = m_triangleSet.GetPointByIndex(intersectedTriangle.p[(newTriangleSharedEdgeVertex  + 1) % 3]);
+
+                    DelaunayTriangleEdge newEdge = new DelaunayTriangleEdge(NOT_FOUND, NOT_FOUND, intersectedTriangle.p[newTriangleSharedEdgeVertex], intersectedTriangle.p[(newTriangleSharedEdgeVertex + 1) % 3]);
+
+                    if (newTriangleSharedEdgePointA != edgeEndpointB && newTriangleSharedEdgePointB != edgeEndpointB && // Watch out! It thinks the line intersects with the edge when an endpoint coincides with a triangle vertex, this problem is avoided thanks to this conditions
+                        newTriangleSharedEdgePointA != edgeEndpointA && newTriangleSharedEdgePointB != edgeEndpointA &&
+                        MathUtils.IntersectionBetweenLines(edgeEndpointA, edgeEndpointB, newTriangleSharedEdgePointA, newTriangleSharedEdgePointB, out intersectionPoint))
+                    {
+                        // New triangles edge still intersects with the constrained edge, so it is returned to the list
+                        intersectedTriangleEdges.Insert(0, newEdge);
+                    }
+                    else
+                    {
+                        newEdges.Add(newEdge);
+                    }
+                }
+                else
+                {
+                    // Back to the list
+                    intersectedTriangleEdges.Insert(0, currentIntersectedTriangleEdge);
+                }
+            }
+
+            // 5.3.4. Check Delaunay constraint and swap edges
+            for (int i = 0; i < newEdges.Count; ++i)
+            {
+                // Checks if the constrained edge coincides with the new edge
+                Vec2 triangleEdgePointA = m_triangleSet.GetPointByIndex(newEdges[i].EdgeVertexA);
+                Vec2 triangleEdgePointB = m_triangleSet.GetPointByIndex(newEdges[i].EdgeVertexB);
+
+                if ((triangleEdgePointA == edgeEndpointA && triangleEdgePointB == edgeEndpointB) ||
+                    (triangleEdgePointB == edgeEndpointA && triangleEdgePointA == edgeEndpointB))
+                {
+                    continue;
+                }
+
+                // Deduces the data for both triangles
+                DelaunayTriangleEdge currentEdge = m_triangleSet.FindTriangleThatContainsEdge(newEdges[i].EdgeVertexA, newEdges[i].EdgeVertexB);
+                DelaunayTriangle currentEdgeTriangle = m_triangleSet.GetTriangle(currentEdge.TriangleIndex);
+                int triangleVertexNotShared = (currentEdge.EdgeIndex + 2) % 3;
+                Vec2 trianglePointNotShared = m_triangleSet.GetPointByIndex(currentEdgeTriangle.p[triangleVertexNotShared]);
+                DelaunayTriangle oppositeTriangle = m_triangleSet.GetTriangle(currentEdgeTriangle.adjacent[currentEdge.EdgeIndex]);
+                Triangle2D oppositeTrianglePoints = m_triangleSet.GetTrianglePoints(currentEdgeTriangle.adjacent[currentEdge.EdgeIndex]);
+
+                //List<int> debugP = currentEdgeTriangle.DebugP;
+                //List<int> debugA = currentEdgeTriangle.DebugAdjacent;
+                //List<int> debugP2 = oppositeTriangle.DebugP;
+                //List<int> debugA2 = oppositeTriangle.DebugAdjacent;
+
+                if (MathUtils.IsPointInsideCircumcircle(oppositeTrianglePoints.p0, oppositeTrianglePoints.p1, oppositeTrianglePoints.p2, trianglePointNotShared))
+                {
+                    // Finds the edge of the opposite triangle that is shared with the other triangle, this edge will be swapped
+                    int sharedEdgeVertexLocalIndex = 0;
+
+                    for (; sharedEdgeVertexLocalIndex < 3; ++sharedEdgeVertexLocalIndex)
+                    {
+                        if (oppositeTriangle.adjacent[sharedEdgeVertexLocalIndex] == currentEdge.TriangleIndex)
+                        {
+                            break;
+                        }
+                    }
+
+                    // Swap
+                    SwapEdges(currentEdge.TriangleIndex, currentEdgeTriangle, triangleVertexNotShared, oppositeTriangle, sharedEdgeVertexLocalIndex);
+                }
+            }
+
+            //Debug.DrawLine(edgeEndpointA, edgeEndpointB, Color.magenta, 10.0f);
+        }
+}
