@@ -408,7 +408,7 @@ impl DelaunayTriangleSet {
                     self.points[self.triangle_vertices[triangle_index * 3 + (i + 1) % 3]],
                     line_endpoint_b,
                 ) {
-                    tentative_adjacent_triangle = i;
+                    tentative_adjacent_triangle = Some(i);
 
                     //Debug.DrawLine(points[triangle_vertices[triangle_index * 3 + i]], points[triangle_vertices[triangle_index * 3 + (i + 1) % 3]], Color.green, 10.0f);
 
