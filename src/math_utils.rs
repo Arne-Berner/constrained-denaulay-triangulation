@@ -1,4 +1,4 @@
-use bevy::prelude::{Vec2, Vec3};
+use bevy::prelude::Vec2;
 
 /// Calculates the determinant of a 3 columns x 3 rows matrix.
 ///
@@ -150,7 +150,6 @@ pub fn intersection_between_lines(
         // First it calculates the standard form (Ax + By = C)
         let m2 = (endpoint_b2.y - endpoint_a2.y) / (endpoint_b2.x - endpoint_a2.x);
 
-        let a2 = m2;
         let c2 = endpoint_a2.x * m2 - endpoint_a2.y;
 
         x = endpoint_a1.x;
@@ -159,7 +158,6 @@ pub fn intersection_between_lines(
         // First it calculates the standard form (Ax + By = C)
         let m1 = (endpoint_b1.y - endpoint_a1.y) / (endpoint_b1.x - endpoint_a1.x);
 
-        let a1 = m1;
         let c1 = endpoint_a1.x * m1 - endpoint_a1.y;
 
         x = endpoint_a2.x;
@@ -167,17 +165,15 @@ pub fn intersection_between_lines(
     } else if !is_line1_vertical && !is_line2_vertical {
         let m1 = (endpoint_b1.y - endpoint_a1.y) / (endpoint_b1.x - endpoint_a1.x);
 
-        let a1 = m1;
         let b1 = -1.0;
         let c1 = endpoint_a1.x * m1 - endpoint_a1.y;
 
         let m2 = (endpoint_b2.y - endpoint_a2.y) / (endpoint_b2.x - endpoint_a2.x);
 
-        let a2 = m2;
         let b2 = -1.0;
         let c2 = endpoint_a2.x * m2 - endpoint_a2.y;
 
-        let determinant = a1 * b2 - a2 * b1;
+        let determinant = m1 * b2 - m2 * b1;
 
         if determinant == 0.0 {
             // Lines do not intersect
@@ -185,7 +181,7 @@ pub fn intersection_between_lines(
         }
 
         x = (b2 * c1 - b1 * c2) / determinant;
-        y = (a1 * c2 - a2 * c1) / determinant;
+        y = (m1 * c2 - m2 * c1) / determinant;
     }
 
     // Checks whether the point is in the segment determined by the endpoints of both lines

@@ -1,7 +1,9 @@
-use bevy::prelude::{Vec2, Color};
+use bevy::prelude::{Color, Vec2};
+
+use crate::math_utils;
 
 /// A 2D triangle.
-struct Triangle2D {
+pub struct Triangle2D {
     /// The first vertex.
     p0: Vec2,
 
@@ -38,25 +40,38 @@ impl Triangle2D {
     }
 }
 
+pub struct Edge {
+    edge_vertex_a: usize,
+    edge_vertex_b: usize,
+}
+
+impl Edge {
+    pub fn new(edge_vertex_a: usize, edge_vertex_b: usize) -> Self {
+        Edge {
+            edge_vertex_a,
+            edge_vertex_b,
+        }
+    }
+}
+
 pub struct DelaunayTriangleEdge {
-    pub triangle_index: Option<usize>,
-    pub edge_index: Option<usize>,
-    pub edge_vertex_a: usize,
-    pub edge_vertex_b: usize,
+    pub triangle_index: usize,
+    pub edge_index: usize,
+    edge: Edge,
 }
 
 impl DelaunayTriangleEdge {
     pub fn new(
-        triangle_index: Option<usize>,
-        edge_index: Option<usize>,
+        triangle_index: usize,
+        edge_index: usize,
         edge_vertex_a: usize,
         edge_vertex_b: usize,
     ) -> Self {
+        Edge::new(edge_vertex_a, edge_vertex_b);
         DelaunayTriangleEdge {
             triangle_index,
             edge_index,
-            edge_vertex_a,
-            edge_vertex_b,
+            edge: Edge::new(edge_vertex_a, edge_vertex_b),
         }
     }
 }
@@ -106,7 +121,6 @@ pub struct DelaunayTriangleSet {
 
     /// The real points in the 2D space.
     points: Vec<Vec2>,
-
     //TODO does this work better as Option?
     // Indicates that the index of a vertex, edge or triangle is not defined or was not found
     //const NOT_FOUND: usize = -1,
@@ -208,9 +222,12 @@ impl DelaunayTriangleSet {
         self.adjacent_triangles.push(adjacent_triangle0);
         self.adjacent_triangles.push(adjacent_triangle1);
         self.adjacent_triangles.push(adjacent_triangle2);
-        self.triangle_vertices.push(self.add_point(p0));
-        self.triangle_vertices.push(self.add_point(p1));
-        self.triangle_vertices.push(self.add_point(p2));
+        let p0_vertex = self.add_point(p0);
+        let p1_vertex = self.add_point(p1);
+        let p2_vertex = self.add_point(p2);
+        self.triangle_vertices.push(p0_vertex);
+        self.triangle_vertices.push(p1_vertex);
+        self.triangle_vertices.push(p2_vertex);
 
         return self.triangle_count() - 1;
     }
@@ -291,59 +308,67 @@ impl DelaunayTriangleSet {
         // First it gets all the triangles of the outline
         for i in 0..polygon_outline.len() {
             // For every edge, it gets the inner triangle that contains such edge
-            let triangle_edge = self.find_triangle_that_contains_edge(
+            if let Some(triangle_edge) = self.find_triangle_that_contains_edge(
                 polygon_outline[i],
                 polygon_outline[(i + 1) % polygon_outline.len()],
-            );
+            ) {
+                // A triangle may form a corner, with 2 consecutive outline edges. This avoids adding it twice
+                // TODO At what point will this panic? Is there a reason for this to have none?
 
-            // A triangle may form a corner, with 2 consecutive outline edges. This avoids adding it twice
-            if output_triangles_in_polygon.len() > 0
-                && (output_triangles_in_polygon[output_triangles_in_polygon.len() - 1]
-                    == triangle_edge.triangle_index
-                    || output_triangles_in_polygon[0] == triangle_edge.triangle_index)
-            {
-                continue;
-            }
-
-            output_triangles_in_polygon.push(triangle_edge.triangle_index);
-
-            let previous_outline_edge_vertex_a =
-                polygon_outline[(i + polygon_outline.len() - 1) % polygon_outline.len()];
-            let previous_outline_edge_vertex_b = polygon_outline[i];
-            let next_outline_edge_vertex_a = polygon_outline[(i + 1) % polygon_outline.len()];
-            let next_outline_edge_vertex_b = polygon_outline[(i + 2) % polygon_outline.len()];
-
-            for j in 1..3 {
-                // For the 2 adjacent triangles of the other 2 edges
-                // TODO should this be if let instead?
-                let adjacent_triangle = adjacent_triangles
-                    [triangle_edge.triangle_index * 3 + (triangle_edge.edge_index + j) % 3];
-                let mut is_adjacent_triangle_in_outline = false;
-
-                // Compares the contiguous edges of the outline, to the right and to the left of the current one, flipped and not flipped, with the adjacent triangle's edges
-                for k in 0..3 {
-                    let current_triangle_edge_vertex_a =
-                        self.triangle_vertices[adjacent_triangle * 3 + k];
-                    let current_triangle_edge_vertex_b =
-                        self.triangle_vertices[adjacent_triangle * 3 + (k + 1) % 3];
-
-                    if (current_triangle_edge_vertex_a == previous_outline_edge_vertex_a
-                        && current_triangle_edge_vertex_b == previous_outline_edge_vertex_b)
-                        || (current_triangle_edge_vertex_a == previous_outline_edge_vertex_b
-                            && current_triangle_edge_vertex_b == previous_outline_edge_vertex_a)
-                        || (current_triangle_edge_vertex_a == next_outline_edge_vertex_a
-                            && current_triangle_edge_vertex_b == next_outline_edge_vertex_b)
-                        || (current_triangle_edge_vertex_a == next_outline_edge_vertex_b
-                            && current_triangle_edge_vertex_b == next_outline_edge_vertex_a)
-                    {
-                        is_adjacent_triangle_in_outline = true;
-                    }
+                if output_triangles_in_polygon.len() > 0
+                    && (output_triangles_in_polygon[output_triangles_in_polygon.len() - 1]
+                        == triangle_edge.triangle_index
+                        || output_triangles_in_polygon[0] == triangle_edge.triangle_index)
+                {
+                    continue;
                 }
 
-                if !is_adjacent_triangle_in_outline
-                    && !output_triangles_in_polygon.contains(&adjacent_triangle)
-                {
-                    adjacent_triangles.push(adjacent_triangle);
+                output_triangles_in_polygon.push(triangle_edge.triangle_index);
+
+                let previous_outline_edge_vertex_a =
+                    polygon_outline[(i + polygon_outline.len() - 1) % polygon_outline.len()];
+                let previous_outline_edge_vertex_b = polygon_outline[i];
+                let next_outline_edge_vertex_a = polygon_outline[(i + 1) % polygon_outline.len()];
+                let next_outline_edge_vertex_b = polygon_outline[(i + 2) % polygon_outline.len()];
+
+                for j in 1..3 {
+                    // For the 2 adjacent triangles of the other 2 edges
+                    // TODO should this be if let instead?
+                    if let Some(adjacent_triangle) = adjacent_triangles
+                        [triangle_edge.triangle_index * 3 + (triangle_edge.edge_index + j) % 3]
+                    {
+                        let mut is_adjacent_triangle_in_outline = false;
+
+                        // Compares the contiguous edges of the outline, to the right and to the left of the current one, flipped and not flipped, with the adjacent triangle's edges
+                        for k in 0..3 {
+                            let current_triangle_edge_vertex_a =
+                                self.triangle_vertices[adjacent_triangle * 3 + k];
+                            let current_triangle_edge_vertex_b =
+                                self.triangle_vertices[adjacent_triangle * 3 + (k + 1) % 3];
+
+                            if (current_triangle_edge_vertex_a == previous_outline_edge_vertex_a
+                                && current_triangle_edge_vertex_b == previous_outline_edge_vertex_b)
+                                || (current_triangle_edge_vertex_a
+                                    == previous_outline_edge_vertex_b
+                                    && current_triangle_edge_vertex_b
+                                        == previous_outline_edge_vertex_a)
+                                || (current_triangle_edge_vertex_a == next_outline_edge_vertex_a
+                                    && current_triangle_edge_vertex_b == next_outline_edge_vertex_b)
+                                || (current_triangle_edge_vertex_a == next_outline_edge_vertex_b
+                                    && current_triangle_edge_vertex_b == next_outline_edge_vertex_a)
+                            {
+                                is_adjacent_triangle_in_outline = true;
+                            }
+                        }
+
+                        // unwrapping here should be ok, since if it was None the code would not work in general
+                        // TODO replace with assert
+                        if !is_adjacent_triangle_in_outline
+                            && !output_triangles_in_polygon.contains(&adjacent_triangle)
+                        {
+                            adjacent_triangles.push(Some(adjacent_triangle));
+                        }
+                    }
                 }
             }
         }
@@ -356,10 +381,9 @@ impl DelaunayTriangleSet {
                     continue;
                 }
                 for i in 0..3 {
-                    if let adjacent_triangle = adjacent_triangles[current_triangle * 3 + i] {
-                        if adjacent_triangle != None
-                            && !output_triangles_in_polygon.contains(&adjacent_triangle)
-                        {
+                    let adjacent_triangle = adjacent_triangles[current_triangle * 3 + i];
+                    if let Some(triangle) = adjacent_triangle {
+                        if !output_triangles_in_polygon.contains(&triangle) {
                             adjacent_triangles.push(adjacent_triangle);
                         }
                     }
@@ -370,9 +394,8 @@ impl DelaunayTriangleSet {
         }
     }
 
-    /// <summary>
     /// Finds the intersected edges of a line segment with triangles in a mesh.
-    /// </summary>
+
     /// * `lineEndpointA` - The first point of the line segment.
     /// * `lineEndpointB` - The second point of the line segment.
     /// * `startTriangle` - The index of the triangle from which to start searching for intersections.
@@ -381,16 +404,13 @@ impl DelaunayTriangleSet {
         &self,
         line_endpoint_a: Vec2,
         line_endpoint_b: Vec2,
-        // TODO should tirangle index be optional?
-        start_triangle: Option<usize>,
-        intersecting_edges: &mut Vec<DelaunayTriangleEdge>,
+        start_triangle: usize,
+        intersecting_edges: &mut Vec<Edge>,
     ) {
         let mut is_triangle_containing_b_found = false;
         let mut triangle_index = start_triangle;
 
         while !is_triangle_containing_b_found {
-            //DrawTriangle(triangle_index, Color.green);
-
             let mut has_crossed_edge = false;
             let mut tentative_adjacent_triangle = None;
 
@@ -412,20 +432,15 @@ impl DelaunayTriangleSet {
 
                     //Debug.DrawLine(points[triangle_vertices[triangle_index * 3 + i]], points[triangle_vertices[triangle_index * 3 + (i + 1) % 3]], Color.green, 10.0f);
 
-                    let mut intersection_point;
-
-                    if math_utils::intersection_between_lines(
+                    if let Some(_) = math_utils::intersection_between_lines(
                         self.points[self.triangle_vertices[triangle_index * 3 + i]],
                         self.points[self.triangle_vertices[triangle_index * 3 + (i + 1) % 3]],
                         line_endpoint_a,
                         line_endpoint_b,
-                        &mut intersection_point,
                     ) {
                         has_crossed_edge = true;
 
-                        intersecting_edges.push(DelaunayTriangleEdge::new(
-                            None,
-                            None,
+                        intersecting_edges.push(Edge::new(
                             self.triangle_vertices[triangle_index * 3 + i],
                             self.triangle_vertices[triangle_index * 3 + (i + 1) % 3],
                         ));
@@ -436,7 +451,8 @@ impl DelaunayTriangleSet {
                         //Debug.DrawRay(intersection_point + new Vec2(-xline_length * 0.5f, xline_length * 0.5f), new Vec2(xline_length, -xline_length), Color.red, 10.0f);
 
                         // The point is in the exterior of the triangle (vertices are sorted CCW, the right side is always the exterior from the perspective of the A->B edge)
-                        triangle_index = self.adjacent_triangles[triangle_index * 3 + i];
+                        // this should contain some value or the alorgorithm will stop there
+                        triangle_index = self.adjacent_triangles[triangle_index * 3 + i].unwrap();
 
                         break;
                     }
@@ -445,8 +461,9 @@ impl DelaunayTriangleSet {
 
             // Continue searching at a different adjacent triangle
             if !has_crossed_edge {
-                triangle_index =
-                    self.adjacent_triangles[triangle_index * 3 + tentative_adjacent_triangle];
+                triangle_index = self.adjacent_triangles
+                    [triangle_index * 3 + tentative_adjacent_triangle.unwrap()]
+                .unwrap();
             }
         }
     }
@@ -495,23 +512,22 @@ impl DelaunayTriangleSet {
         &self,
         edge_vertex_a: usize,
         edge_vertex_b: usize,
-    ) -> DelaunayTriangleEdge {
-        let mut found_triangle =
-            DelaunayTriangleEdge::new(None, None, edge_vertex_a, edge_vertex_b);
-
+    ) -> Option<DelaunayTriangleEdge> {
         for i in 0..self.triangle_count() {
             for j in 0..3 {
                 if self.triangle_vertices[i * 3 + j] == edge_vertex_a
                     && self.triangle_vertices[i * 3 + (j + 1) % 3] == edge_vertex_b
                 {
-                    found_triangle.triangle_index = i;
-                    found_triangle.edge_index = j;
-                    break;
+                    return Some(DelaunayTriangleEdge::new(
+                        i,
+                        j,
+                        edge_vertex_a,
+                        edge_vertex_b,
+                    ));
                 }
             }
         }
-
-        found_triangle
+        None
     }
 
     /// Given a point, it searches for a triangle that contains it.
@@ -525,16 +541,18 @@ impl DelaunayTriangleSet {
 
         while !is_triangle_found && checked_triangles < self.triangle_count() {
             is_triangle_found = true;
-
             for i in 0..3 {
+                // if it is outside of the triangle
                 if math_utils::is_point_to_the_right_of_edge(
                     self.points[self.triangle_vertices[triangle_index * 3 + i]],
                     self.points[self.triangle_vertices[triangle_index * 3 + (i + 1) % 3]],
                     point,
                 ) {
                     // The point is in the exterior of the triangle (vertices are sorted CCW, the right side is always the exterior from the perspective of the A->B edge)
-                    triangle_index = self.adjacent_triangles[triangle_index * 3 + i];
-
+                    // It can not form a circle, because it will only be on the right side for max 2 edges
+                    if let Some(index) = self.adjacent_triangles[triangle_index * 3 + i] {
+                        triangle_index = index;
+                    }
                     is_triangle_found = false;
                     break;
                 }
@@ -549,6 +567,7 @@ impl DelaunayTriangleSet {
 
         triangle_index
     }
+
     /// Given an edge AB, it searches for a triangle that contains the first point and the beginning of the edge.
     /// * `endpointAIndex` - The index of the first point.
     /// * `endpointBIndex` - The index of the second point.
@@ -561,7 +580,7 @@ impl DelaunayTriangleSet {
         let mut triangles_with_endpoint: Vec<usize> = Vec::new();
         self.get_triangles_with_vertex(endpoint_a_index, &mut triangles_with_endpoint);
 
-        let mut found_triangle = NOT_FOUND;
+        let mut found_triangle = None;
         let endpoint_a = self.points[endpoint_a_index];
         let endpoint_b = self.points[endpoint_b_index];
         //Debug.DrawLine(endpointA + Vec2.up * 0.01f, endpointB + Vec2.up * 0.01f, Color.yellow, 10.0f);
@@ -592,28 +611,26 @@ impl DelaunayTriangleSet {
                 triangle_edge_point2,
                 endpoint_b,
             ) {
-                found_triangle = triangles_with_endpoint[i];
+                found_triangle = Some(triangles_with_endpoint[i]);
                 break;
             }
         }
 
-        found_triangle
+        found_triangle.expect("The beginning should at least be in the super triangle.")
     }
 
-    /// <summary>
     /// Stores the adjacency data of a triangle.
-    /// </summary>
     /// * `triangleIndex` - The index of the triangle whose adjacency data is to be written.
     /// * `adjacentsToTriangle` - The adjacency data, 3 triangle indices sorted counter-clockwise.
     pub fn set_triangle_adjacency(
         &mut self,
         triangle_index: usize,
-        adjacents_to_triangle: *mut Option<usize>,
+        adjacents_to_triangle: &[Option<usize>],
     ) {
+        self.adjacent_triangles
+            .copy_from_slice(adjacents_to_triangle);
         for i in 0..3 {
-            // TODO do i need unsafe here?
-            self.adjacent_triangles[triangle_index * 3 + i] =
-                unsafe { *adjacents_to_triangle.offset(i as isize) };
+            self.adjacent_triangles[triangle_index * 3 + i] = adjacents_to_triangle[i]
         }
     }
 
@@ -650,6 +667,7 @@ impl DelaunayTriangleSet {
         }
     }
 
+    #[allow(unused)]
     pub fn draw_triangle(&self, triangle_index: usize, color: Color) {
         for i in 0..3 {
             let start_point = self.points[self.triangle_vertices[triangle_index * 3 + i]];
@@ -674,8 +692,9 @@ impl DelaunayTriangleSet {
             log_entry += ")</color>-A(";
 
             for j in 0..3 {
-                if let Some(triangle) = self.adjacent_triangles[i * 3 + j]{
-                    log_entry += &triangle.to_string();                }
+                if let Some(triangle) = self.adjacent_triangles[i * 3 + j] {
+                    log_entry += &triangle.to_string();
+                }
 
                 if j < 2 {
                     log_entry += ", ";

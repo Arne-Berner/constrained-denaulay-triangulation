@@ -1,4 +1,4 @@
-use bevy::prelude::{Vec2, Gizmos, Color};
+use bevy::prelude::{Color, Gizmos, Vec2};
 
 pub struct PointBinGrid {
     cells: Vec<Vec<Vec2>>,
@@ -26,17 +26,15 @@ impl PointBinGrid {
         let column_index =
             (0.99 * self.cells_per_side as f32 * new_point.x / self.grid_size.x) as u32;
 
-        let mut bin_index: usize = 0;
-
         // it will be filled like so:
         // 6 7 8 ->
         // 5 4 3 <-
         // 0 1 2 ->
-        if row_index % 2 == 0 {
-            bin_index = (row_index * self.cells_per_side + column_index) as usize;
+        let bin_index = if row_index % 2 == 0 {
+            (row_index * self.cells_per_side + column_index) as usize
         } else {
-            bin_index = ((row_index + 1) * self.cells_per_side - column_index - 1) as usize;
-        }
+            ((row_index + 1) * self.cells_per_side - column_index - 1) as usize
+        };
 
         // this should not be able to happen?
         if self.cells.get(bin_index).is_none() {
