@@ -283,16 +283,10 @@ fn add_point_to_triangulation(&self, point_to_insert: Vec2) -> Option<usize> {
 
             // Sets the adjacency of the triangles that were adjacent to the original containing triangle
             if let Some(adjacent_triangle) = first_triangle.adjacent(1){
-                triangle_set.replace_adjacent(adjacent_trianglej, Some(containing_triangle_index), first_triangle_index)
+                triangle_set.replace_adjacent(adjacent_triangle, Some(containing_triangle_index), first_triangle_index)
             }
-            if (newTriangle1.adjacent[1] != NO_ADJACENT_TRIANGLE)
-            {
-                m_triangleSet.ReplaceAdjacent(newTriangle1.adjacent[1], containingTriangleIndex, triangle1Index);
-            }
-
-            if (newTriangle2.adjacent[1] != NO_ADJACENT_TRIANGLE)
-            {
-                m_triangleSet.ReplaceAdjacent(newTriangle2.adjacent[1], containingTriangleIndex, triangle2Index);
+            if let Some(adjacent_triangle) = second_triangle.adjacent(1){
+                triangle_set.replace_adjacent(adjacent_triangle, Some(containing_triangle_index), second_triangle_index)
             }
 
             // 4.5: Transform containing triangle into the third
