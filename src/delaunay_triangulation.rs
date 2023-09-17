@@ -509,15 +509,17 @@ fn add_constrained_edge_to_triangulation(&self, endpoint_a_index: usize, endpoin
             let new_edges = Vec::<DelaunayTriangleEdge>::new();
 
             while (intersected_triangle_edges.len() > 0){
-                DelaunayTriangleEdge currentIntersectedTriangleEdge = intersectedTriangleEdges[intersectedTriangleEdges.Count - 1];
-                intersectedTriangleEdges.RemoveAt(intersectedTriangleEdges.Count - 1);
+                // wird eine copy erstellt?
+                let current_intersected_triangle_edge = intersected_triangle_edges[intersected_triangle_edges.len() - 1];
+                intersected_triangle_edges.remove(intersected_triangle_edges.len() -1);
 
                 // 5.3.3: Form quadrilaterals and swap intersected edges
                 // Deduces the data for both triangles
-                currentIntersectedTriangleEdge = m_triangleSet.FindTriangleThatContainsEdge(currentIntersectedTriangleEdge.EdgeVertexA, currentIntersectedTriangleEdge.EdgeVertexB);
-                DelaunayTriangle intersectedTriangle = m_triangleSet.GetTriangle(currentIntersectedTriangleEdge.TriangleIndex);
-                DelaunayTriangle oppositeTriangle = m_triangleSet.GetTriangle(intersectedTriangle.adjacent[currentIntersectedTriangleEdge.EdgeIndex]);
-                Triangle2D trianglePoints = m_triangleSet.GetTrianglePoints(currentIntersectedTriangleEdge.TriangleIndex);
+                if let Some(current_intersected_triangle_edge) = triangle_set.find_triangle_that_contains_edge(current_intersected_triangle_edge.edge_vertex_a, current_intersected_triangle_edge.edge_vertex_b){
+                    let intersected_triangle = triangle_set.get_triangle(current_intersected_triangle_edge.triangle_index);
+                    // TODO This should probably be checked for None, I think there are cases it is None.
+                    let opposite_triangle = triangle_set.get_triangle(intersected_triangle.adjacent[current_intersected_triangle_edge.edge_index].unwrap());
+                    let triangle_points = triangle_set.get_triangle_points(current_intersected_triangle_edge.triangle_index);
 
                 // Gets the opposite vertex of adjacent triangle, knowing the fisrt vertex of the shared edge
                 int oppositeVertex = NOT_FOUND;
@@ -581,6 +583,7 @@ fn add_constrained_edge_to_triangulation(&self, endpoint_a_index: usize, endpoin
                     // Back to the list
                     intersectedTriangleEdges.Insert(0, currentIntersectedTriangleEdge);
                 }
+            }
             }
 
             // 5.3.4. Check Delaunay constraint and swap edges

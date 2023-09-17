@@ -42,8 +42,8 @@ impl Triangle2D {
 }
 
 pub struct Edge {
-    edge_vertex_a: usize,
-    edge_vertex_b: usize,
+    pub edge_vertex_a: usize,
+    pub edge_vertex_b: usize,
 }
 
 impl Edge {
@@ -55,6 +55,7 @@ impl Edge {
     }
 }
 
+// TODO this should be renamed, since it has nothing to do with delaunay
 pub struct DelaunayTriangleEdge {
     pub triangle_index: usize,
     pub edge_index: usize,
