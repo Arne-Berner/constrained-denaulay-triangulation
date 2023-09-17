@@ -76,6 +76,14 @@ impl DelaunayTriangleEdge {
             edge: Edge::new(edge_vertex_a, edge_vertex_b),
         }
     }
+
+    pub fn a(&self) -> usize {
+        self.edge.edge_vertex_a
+    }
+
+    pub fn b(&self) -> usize {
+        self.edge.edge_vertex_b
+    }
 }
 
 /// Data that describes a triangle and its context in a triangulation.
@@ -243,8 +251,8 @@ impl DelaunayTriangleSet {
     pub fn get_triangles_with_vertex(
         &self,
         vertex_index: usize,
-        output_triangles: &mut Vec<usize>,
-    ) {
+    ) -> Vec<usize> {
+        let mut output_triangles = Vec::new();
         for i in 0..self.triangle_count() {
             for j in 0..3 {
                 if self.triangle_vertices[i * 3 + j] == vertex_index {
@@ -253,6 +261,7 @@ impl DelaunayTriangleSet {
                 }
             }
         }
+        output_triangles
     }
 
     /// Gets the points of a triangle.
