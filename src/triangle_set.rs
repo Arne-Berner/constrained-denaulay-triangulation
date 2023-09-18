@@ -41,7 +41,6 @@ impl Triangle2D {
     }
 }
 
-#[derive(Clone,Copy)]
 pub struct Edge {
     pub edge_vertex_a: usize,
     pub edge_vertex_b: usize,
@@ -66,7 +65,6 @@ impl Edge {
 
 
 // TODO this should be renamed, since it has nothing to do with delaunay
-#[derive(Clone, Copy)]
 pub struct DelaunayTriangleEdge {
     pub triangle_index: usize,
     pub edge_index: usize,
@@ -98,7 +96,6 @@ impl DelaunayTriangleEdge {
 }
 
 /// Data that describes a triangle and its context in a triangulation.
-#[derive(Clone, Copy)]
 pub struct DelaunayTriangle {
     /// The indices of the points that define the triangle.
     pub p: [usize; 3],
@@ -133,8 +130,6 @@ impl DelaunayTriangle {
         }
     }
 }
-
-#[derive(Clone)]
 pub struct DelaunayTriangleSet {
     /// The indices of the adjacent triangles of every triangle, so there are 3 indices per triangle, and each index is the position of the triangle in groups of 3.
     adjacent_triangles: Vec<Option<usize>>,
