@@ -53,13 +53,22 @@ impl Edge {
             edge_vertex_b,
         }
     }
+
+    pub fn a(&self) -> usize {
+        self.edge_vertex_a
+    }
+
+    pub fn b(&self) -> usize {
+        self.edge_vertex_b
+    }
 }
+
 
 // TODO this should be renamed, since it has nothing to do with delaunay
 pub struct DelaunayTriangleEdge {
     pub triangle_index: usize,
     pub edge_index: usize,
-    edge: Edge,
+    pub edge: Edge,
 }
 
 impl DelaunayTriangleEdge {
@@ -588,8 +597,7 @@ impl DelaunayTriangleSet {
         endpoint_a_index: usize,
         endpoint_b_index: usize,
     ) -> usize {
-        let mut triangles_with_endpoint: Vec<usize> = Vec::new();
-        self.get_triangles_with_vertex(endpoint_a_index, &mut triangles_with_endpoint);
+        let mut triangles_with_endpoint: Vec<usize> = self.get_triangles_with_vertex(endpoint_a_index);
 
         let mut found_triangle = None;
         let endpoint_a = self.points[endpoint_a_index];
