@@ -597,7 +597,7 @@ impl DelaunayTriangleSet {
         endpoint_a_index: usize,
         endpoint_b_index: usize,
     ) -> usize {
-        let mut triangles_with_endpoint: Vec<usize> = self.get_triangles_with_vertex(endpoint_a_index);
+        let triangles_with_endpoint: Vec<usize> = self.get_triangles_with_vertex(endpoint_a_index);
 
         let mut found_triangle = None;
         let endpoint_a = self.points[endpoint_a_index];

@@ -1,11 +1,11 @@
 use std::time::Duration;
 
-use bevy::{math::Vec3A, prelude::Vec2, render::primitives::Aabb, utils::petgraph::adj};
+use bevy::{math::Vec3A, prelude::Vec2, render::primitives::Aabb};
 
 use crate::{
     math_utils,
     point_bin_grid::PointBinGrid,
-    triangle_set::{DelaunayTriangle, DelaunayTriangleEdge, DelaunayTriangleSet, Edge, Triangle2D},
+    triangle_set::{DelaunayTriangle, DelaunayTriangleSet, Edge, Triangle2D},
 };
 
 /// Encapsulates the entire constrained Delaunay triangulation algorithm, according to S. W. Sloan's proposal, and stores the resulting triangulation.
@@ -72,7 +72,7 @@ impl DelaunayTriangulation {
             self.triangle_set = Some(DelaunayTriangleSet::new(input_points.len() - 2));
         }
 
-        if let Some(adjacent_triangles) = self.adjacent_triangles {
+        if let Some(_) = self.adjacent_triangles {
             self.adjacent_triangles = Some(Vec::<usize>::with_capacity(input_points.len() - 2));
             self.adjacent_triangle_edges = Vec::<usize>::with_capacity(input_points.len() - 2);
         } else {
@@ -641,7 +641,7 @@ impl DelaunayTriangulation {
 
         let mut new_edges = Vec::<Edge>::new();
 
-        while (intersected_triangle_edges.len() > 0) {
+        while intersected_triangle_edges.len() > 0 {
             // wird eine copy erstellt?
             let current_intersected_triangle_edge =
                 intersected_triangle_edges[intersected_triangle_edges.len() - 1];
@@ -782,11 +782,12 @@ impl DelaunayTriangulation {
                     ) {
                         // Finds the edge of the opposite triangle that is shared with the other triangle, this edge will be swapped
 
-                        let index;
-                        for index in 0..3 {
-                            if opposite_triangle.adjacent[index].unwrap()
+                        let mut index = 0;
+                        for i in 0..3 {
+                            if opposite_triangle.adjacent[i].unwrap()
                                 == current_edge.triangle_index
                             {
+                                index = i;
                                 break;
                             }
                         }
@@ -814,7 +815,7 @@ impl DelaunayTriangulation {
     fn get_supertriangle_triangles(&mut self, output_triangles: &mut Vec<usize>) {
         for i in 0..3 {
             // Vertices of the supertriangle
-            let mut triangles_that_share_vertex =
+            let triangles_that_share_vertex =
                 self.triangle_set.unwrap().get_triangles_with_vertex(i);
 
             for j in 0..triangles_that_share_vertex.len() {
@@ -954,6 +955,7 @@ impl DelaunayTriangulation {
         }
     }
 
+    #[allow(unused)]
     pub fn draw_points(points: &Vec<Vec2>, duration: Duration) {
         for point in points {
             //debug::draw_ray(point, Vec2::up() * 0.2, Color::red(), duration);
