@@ -34,6 +34,24 @@ pub struct DelaunayTriangulation {
 }
 
 impl DelaunayTriangulation {
+    pub fn new(
+        cells_per_side: usize,
+        grid_size: Vec2,
+        triangle_set: Option<DelaunayTriangleSet>,
+        adjacent_triangles: Option<Vec<usize>>,
+        adjacent_triangle_edges: Vec<usize>,
+        triangles_to_remove: Option<Vec<usize>>,
+        main_point_cloud_bounds: Aabb,
+    ) -> Self {
+        DelaunayTriangulation {
+            grid: PointBinGrid::new(cells_per_side, grid_size),
+            triangle_set,
+            adjacent_triangles,
+            adjacent_triangle_edges,
+            triangles_to_remove,
+            main_point_cloud_bounds,
+        }
+    }
     /// Gets the metadata of all the generated triangles.
     pub fn triangle_set(&self) -> &Option<DelaunayTriangleSet> {
         &self.triangle_set
@@ -667,7 +685,7 @@ impl DelaunayTriangulation {
             if let Some(current_intersected_triangle_edge) = triangle_set
                 .find_triangle_that_contains_edge(
                     current_intersected_triangle_edge_vertices.0,
-                    current_intersected_triangle_edge_vertices.1
+                    current_intersected_triangle_edge_vertices.1,
                 )
             {
                 let mut intersected_triangle =

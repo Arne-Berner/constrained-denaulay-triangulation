@@ -2,7 +2,8 @@ pub mod point_bin_grid;
 pub mod triangle_set;
 pub mod math_utils;
 pub mod delaunay_triangulation;
-use bevy::prelude::*;
+use bevy::{prelude::*, render::primitives::Aabb};
+use delaunay_triangulation::DelaunayTriangulation;
 
 fn main() {
     App::new()
@@ -23,6 +24,7 @@ fn setup(mut commands: Commands) {
             ..default()
         },
     ));
+    let triangulation = DelaunayTriangulation::new(10, Vec2::new(10., 10.), None, None, vec![], None, Aabb::from_min_max(Vec3::new(-10.,0.,-10.), Vec3::new(10., 0., 10.)));
 }
 
 
