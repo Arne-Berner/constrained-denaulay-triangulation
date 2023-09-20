@@ -24,7 +24,9 @@ fn setup(mut commands: Commands) {
             ..default()
         },
     ));
+    println!("Before creating triangulation");
     let triangulation = DelaunayTriangulation::new(100, Vec2::new(1., 1.)* 50000., None, None, vec![], None, Aabb::from_min_max(Vec3::new(-1.,1.,-1.)*10000., Vec3::new(1., 1., 1.)*10000.));
+    println!("After creating triangulation");
 let p0 = Vec2::new(-6189.595, 8209.541);
 let p1 = Vec2::new(-5733.924, 8823.252);
 let p2 = Vec2::new(-5748.702, 8231.538);
@@ -37,7 +39,11 @@ let p8 = Vec2::new(-6284.938, 8771.748);
 let points = vec![p0, p1, p2, p3, p4, p5, p6, p7, p8];
 let hole1 = vec![Vec2::new(1., 1.), Vec2::new(1.,2.),Vec2::new(2.,2.), Vec2::new(2., 1.)];
 let holes = vec![hole1];
+    println!("Before triangulation");
     triangulation.triangulate(&points, 0., None);
+    println!("--------------------------------------------------------------");
+    println!("DONE!");
+    println!("--------------------------------------------------------------");
 }
 
 

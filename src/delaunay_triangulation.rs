@@ -108,6 +108,7 @@ impl DelaunayTriangulation {
             triangles_to_remove = unwrapped;
         }
 
+        println!("before normalization");
         // 1: Normalization
         self.main_point_cloud_bounds =
             DelaunayTriangulation::calculate_bounds_with_left_bottom_corner_at_origin(
@@ -120,6 +121,7 @@ impl DelaunayTriangulation {
             &self.main_point_cloud_bounds,
         );
 
+        println!("before addition of points to the space partitioning grid");
         // 2: Addition of points to the space partitioning grid
         let normalized_cloud_bounds =
             DelaunayTriangulation::calculate_bounds_with_left_bottom_corner_at_origin(
@@ -137,6 +139,7 @@ impl DelaunayTriangulation {
             grid.add_point(point);
         }
 
+        println!("before supertriangle initialization");
         // 3: Supertriangle initialization
         let supertriangle = Triangle2D::new(
             Vec2::new(-100.0, -100.0),
@@ -152,6 +155,7 @@ impl DelaunayTriangulation {
             None,
         );
 
+        println!("before adding points to triangle set (+ optimization)");
         // 4: Adding points to the Triangle set and Triangulation
         // Points are added one at a time, and points that are close together are inserted together because they are sorted in the grid,
         // so a later step for finding their containing triangle is faster
@@ -176,6 +180,7 @@ impl DelaunayTriangulation {
             );
         }
 
+        println!("before creating holes");
         // 5: Holes creation (constrained edges)
         if let Some(constrained_edges) = constrained_edges {
             // Adds the points of all the polygons to the triangulation
