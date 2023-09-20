@@ -471,7 +471,7 @@ impl DelaunayTriangulation {
 
                 // Adds the 2 triangles that were adjacent to the opposite triangle, to be processed too
                 if let Some(adjacent) =
-                    opposite_triangle.adjacent[(shared_edge_vertex_index + 1) & 3]
+                    opposite_triangle.adjacent[(shared_edge_vertex_index + 1) % 3]
                 {
                     let opposite_adjacent0 = adjacent.clone();
                     // a reference works here, because it will only be used to check
