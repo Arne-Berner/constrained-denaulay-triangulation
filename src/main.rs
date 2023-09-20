@@ -24,7 +24,7 @@ fn setup(mut commands: Commands) {
             ..default()
         },
     ));
-    let triangulation = DelaunayTriangulation::new(10, Vec2::new(10., 10.), None, None, vec![], None, Aabb::from_min_max(Vec3::new(-10.,0.,-10.), Vec3::new(10., 0., 10.)));
+    let triangulation = DelaunayTriangulation::new(100, Vec2::new(1., 1.)* 50000., None, None, vec![], None, Aabb::from_min_max(Vec3::new(-1.,1.,-1.)*10000., Vec3::new(1., 1., 1.)*10000.));
 let p0 = Vec2::new(-6189.595, 8209.541);
 let p1 = Vec2::new(-5733.924, 8823.252);
 let p2 = Vec2::new(-5748.702, 8231.538);

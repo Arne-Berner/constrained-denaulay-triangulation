@@ -473,21 +473,25 @@ impl DelaunayTriangulation {
                 if let Some(adjacent) =
                     opposite_triangle.adjacent[(shared_edge_vertex_index + 1) % 3]
                 {
-                    let opposite_adjacent0 = adjacent.clone();
-                    // a reference works here, because it will only be used to check
+                    let opposite_adjacent0 = adjacent;
                     if !adjacent_triangles_to_process.contains(&opposite_adjacent0) {
                         adjacent_triangles_to_process.push(opposite_adjacent0);
-                        let neighbor_edge = DelaunayTriangulation::get_shared_edge(
+                        if let Some(neighbor_edge) = DelaunayTriangulation::get_shared_edge(
                             &triangle_set.get_triangle(opposite_adjacent0),
                             triangle.adjacent[opposite_triangle_index].unwrap(),
-                        )
-                        .unwrap();
+                        ){
                         adjacent_triangle_edges.push(neighbor_edge);
+                        }
+                        else{
+                            // TODO why can it be null?
+                            // it probably means, that they have no shared edge, which is normal
+                            println!("there was no edge!")
+                        }
                     }
                 }
 
                 if let Some(adjacent) =
-                    opposite_triangle.adjacent[(shared_edge_vertex_index + 2) & 3]
+                    opposite_triangle.adjacent[(shared_edge_vertex_index + 2) % 3]
                 {
                     let opposite_adjacent1 = adjacent.clone();
                     if !adjacent_triangles_to_process.contains(&opposite_adjacent1) {
@@ -506,9 +510,15 @@ impl DelaunayTriangulation {
                         adjacent_triangles_to_process.push(triangle_adjacent0);
                         let neighbor_edge = DelaunayTriangulation::get_shared_edge(
                             &triangle_set.get_triangle(triangle_adjacent0),
-                            triangle.adjacent[current_triangle_to_swap].unwrap(),
+                            current_triangle_to_swap,
                         );
-                        adjacent_triangle_edges.push(neighbor_edge.unwrap());
+                        // it could be a problem, that this takes usize instead of option
+                        // because there could be no neighbor edge?
+                        if let Some(neighbor_edge) = neighbor_edge{
+                        adjacent_triangle_edges.push(neighbor_edge);
+                        } else {
+                            println!("no neighbor edge found!")
+                        }
                     }
                 }
 
@@ -518,7 +528,7 @@ impl DelaunayTriangulation {
                         adjacent_triangles_to_process.push(triangle_adjacent1);
                         let neighbor_edge = DelaunayTriangulation::get_shared_edge(
                             &triangle_set.get_triangle(triangle_adjacent1),
-                            triangle.adjacent[current_triangle_to_swap].unwrap(),
+                            current_triangle_to_swap,
                         );
                         adjacent_triangle_edges.push(neighbor_edge.unwrap());
                     }
