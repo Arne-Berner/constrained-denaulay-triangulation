@@ -649,8 +649,6 @@ impl DelaunayTriangleSet {
         triangle_index: usize,
         adjacents_to_triangle: &[Option<usize>],
     ) {
-        self.adjacent_triangles
-            .copy_from_slice(adjacents_to_triangle);
         for i in 0..3 {
             self.adjacent_triangles[triangle_index * 3 + i] = adjacents_to_triangle[i]
         }
