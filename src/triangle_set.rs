@@ -61,6 +61,10 @@ impl Edge {
     pub fn b(&self) -> usize {
         self.edge_vertex_b
     }
+
+    pub fn vertices(&self) -> (usize, usize){
+        (self.edge_vertex_a, self.edge_vertex_b)
+    }
 }
 
 
@@ -197,7 +201,7 @@ impl DelaunayTriangleSet {
 
     /// Forms a new triangle using the existing points.
     /// Returns the index of the new triangle.
-    pub fn add_triangle(&mut self, new_triangle: DelaunayTriangle) -> usize {
+    pub fn add_triangle(&mut self, new_triangle: &DelaunayTriangle) -> usize {
         for adjacent_triangle in new_triangle.adjacent {
             self.adjacent_triangles.push(adjacent_triangle)
         }
@@ -678,7 +682,7 @@ impl DelaunayTriangleSet {
     ///
     /// * `triangle_index` - The index of the triangle whose data is to be replaced.
     /// * `new_triangle` - The new data that will replace the existing one.
-    pub fn replace_triangle(&mut self, triangle_index: usize, new_triangle: DelaunayTriangle) {
+    pub fn replace_triangle(&mut self, triangle_index: usize, new_triangle: &DelaunayTriangle) {
         for i in 0..3 {
             self.triangle_vertices[triangle_index * 3 + i] = new_triangle.p[i];
             self.adjacent_triangles[triangle_index * 3 + i] = new_triangle.adjacent[i];
