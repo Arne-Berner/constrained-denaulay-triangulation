@@ -2,6 +2,7 @@ pub mod point_bin_grid;
 pub mod triangle_set;
 pub mod math_utils;
 pub mod delaunay_triangulation;
+mod delaunay_triangulation_old;
 use bevy::prelude::*;
 
 fn main() {
