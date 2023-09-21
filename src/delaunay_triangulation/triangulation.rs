@@ -4,7 +4,7 @@ use bevy::{prelude::Gizmos, prelude::Vec2};
 use crate::{
     delaunay_triangulation::normalize,
     point_bin_grid::PointBinGrid,
-    triangle_set::{Triangle2D, TriangleSet, DelaunayTriangle},
+    triangle_set::{DelaunayTriangle, Triangle2D, TriangleSet},
 };
 
 pub fn triangulate(
@@ -142,7 +142,7 @@ pub fn triangulate(
 }
 
 fn add_point_to_triangulation(
-    adjacent_triangles: &mut Option<Vec<usize>>,
+    adjacent_triangles: &mut Vec<usize>,
     triangle_set: &mut TriangleSet,
     adjacent_triangle_edges: &mut Vec<usize>,
     point_to_insert: Vec2,
@@ -167,32 +167,35 @@ fn add_point_to_triangulation(
         // 4.3: Store the point
         // Inserting a new point into a triangle splits it into 3 pieces, 3 new triangles
         let inserted_point_index = triangle_set.add_point(point_to_insert);
-        let original_points = (containing_triangle.p[0], containing_triangle.p[1], containing_triangle.p[2]);
+        let original_points = (
+            containing_triangle.p[0],
+            containing_triangle.p[1],
+            containing_triangle.p[2],
+        );
 
         // 4.4: Create 2 triangles
-        let mut first_triangle = DelaunayTriangle::new(
-            original_points.0,
-            original_points.1,
-            inserted_point_index,
-        );
-        first_triangle.adjacent[0] = containing_triangle.adjacent[0]; // the originals adjacent
-        first_triangle.adjacent[1] = Some(triangle_set.triangle_count() + 1); // the second triangle
+        // rework so that it is easier to understand with own drawing
+        let mut first_triangle =
+            DelaunayTriangle::new(inserted_point_index, 
+                original_points.0, 
+                original_points.1);
+        first_triangle.adjacent[0] = Some(triangle_set.triangle_count() + 1); // the second triangle
+        first_triangle.adjacent[1] = containing_triangle.adjacent[0]; // the originals adjacent
         first_triangle.adjacent[2] = Some(containing_triangle_index); // this is the original triangle, that will get changed a bit
         let first_triangle_index = triangle_set.add_triangle(&first_triangle);
-        
-        let mut second_triangle = DelaunayTriangle::new(
-            inserted_point_index,
-            original_points.1,
-            original_points.2,
-        );
 
-        second_triangle.adjacent[0] = Some(first_triangle_index); 
-        second_triangle.adjacent[1] = containing_triangle.adjacent[1];
-        second_triangle.adjacent[2] = Some(containing_triangle_index);
+        let mut second_triangle =
+            DelaunayTriangle::new(inserted_point_index, 
+                original_points.2, 
+                original_points.1);
+
+        second_triangle.adjacent[0] = Some(containing_triangle_index);
+        second_triangle.adjacent[1] = containing_triangle.adjacent[2];
+        second_triangle.adjacent[2] = Some(first_triangle_index);
         let second_triangle_index = triangle_set.add_triangle(&second_triangle);
 
         // Sets the adjacency of the triangles that were adjacent to the original containing triangle
-        if let Some(adjacent_triangle) = first_triangle.adjacent[0] {
+        if let Some(adjacent_triangle) = first_triangle.adjacent[1] {
             triangle_set.replace_adjacent(
                 adjacent_triangle,
                 Some(containing_triangle_index),
@@ -209,19 +212,17 @@ fn add_point_to_triangulation(
 
         // 4.5: Transform containing triangle into the third
         // Original triangle is transformed into the third triangle after the point has split the containing triangle into 3
-        containing_triangle.p[0] = original_points.2;
-        containing_triangle.p[1] = original_points.0;
-        containing_triangle.p[2] = inserted_point_index;
-        containing_triangle.adjacent[0] = containing_triangle.adjacent[2];
-        containing_triangle.adjacent[1] = Some(first_triangle_index);
+        containing_triangle.p[0] = inserted_point_index;
+        containing_triangle.adjacent[0] = Some(first_triangle_index);
+        containing_triangle.adjacent[1] = containing_triangle.adjacent[1];
         containing_triangle.adjacent[2] = Some(second_triangle_index);
         triangle_set.replace_triangle(containing_triangle_index, &containing_triangle);
 
-        // GOT TO HERE
         // 4.6: Add new triangles to a stack
         // Triangles that contain the inserted point are added to the stack for them to be processed by the Delaunay swapping algorithm
         if containing_triangle.adjacent[1].is_some() {
             adjacent_triangles.push(containing_triangle_index);
+            // the edge connecting the adjacent to the containing
             adjacent_triangle_edges.push(1);
         }
 
