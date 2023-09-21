@@ -2,6 +2,33 @@ use bevy::prelude::{Color, Vec2};
 
 use crate::math_utils;
 
+pub struct Triangle {
+    /// The indices of the points that define the triangle.
+    pub p: [Vec2; 3],
+    /// The indices of the triangles that are adjacent.
+    pub adjacent: [Option<usize>; 3],
+}
+impl Triangle {
+    pub fn new(point0: Vec2, point1: Vec2, point2: Vec2) -> Self {
+        Triangle {
+            p: [point0, point1, point2],
+            adjacent: [None, None, None],
+        }
+    }
+
+    pub fn with_adjacent(
+        mut self,
+        adjacent0: Option<usize>,
+        adjacent1: Option<usize>,
+        adjacent2: Option<usize>,
+    ) -> Triangle {
+        self.adjacent[0] = adjacent0;
+        self.adjacent[1] = adjacent1;
+        self.adjacent[2] = adjacent2;
+        self
+    }
+}
+
 /// A 2D triangle.
 pub struct Triangle2D {
     /// The first vertex.
@@ -113,9 +140,6 @@ impl DelaunayTriangle {
         }
     }
 
-    // TODO use builder pattern instead
-    // Is that more performant?
-    /// Constructor that receives all the data.
     pub fn with_adjacent(
         mut self,
         adjacent0: Option<usize>,
@@ -229,15 +253,15 @@ impl TriangleSet {
         adjacent_triangle1: Option<usize>,
         adjacent_triangle2: Option<usize>,
     ) -> usize {
-        self.adjacent_triangles.push(adjacent_triangle0);
-        self.adjacent_triangles.push(adjacent_triangle1);
-        self.adjacent_triangles.push(adjacent_triangle2);
         let p0_vertex = self.add_point(p0);
         let p1_vertex = self.add_point(p1);
         let p2_vertex = self.add_point(p2);
         self.triangle_vertices.push(p0_vertex);
         self.triangle_vertices.push(p1_vertex);
         self.triangle_vertices.push(p2_vertex);
+        self.adjacent_triangles.push(adjacent_triangle0);
+        self.adjacent_triangles.push(adjacent_triangle1);
+        self.adjacent_triangles.push(adjacent_triangle2);
 
         return self.triangle_count() - 1;
     }
@@ -287,17 +311,30 @@ impl TriangleSet {
     /// # Returns
     ///
     /// The triangle data.
-    pub fn get_triangle(&self, triangle_index: usize) -> DelaunayTriangle {
-        DelaunayTriangle::new(
-            self.triangle_vertices[triangle_index * 3],
-            self.triangle_vertices[triangle_index * 3 + 1],
-            self.triangle_vertices[triangle_index * 3 + 2],
+    // pub fn get_triangle(&self, triangle_index: usize) -> DelaunayTriangle {
+    //     DelaunayTriangle::new(
+    //         self.triangle_vertices[triangle_index * 3],
+    //         self.triangle_vertices[triangle_index * 3 + 1],
+    //         self.triangle_vertices[triangle_index * 3 + 2],
+    //     ).with_adjacent(
+    //         self.adjacent_triangles[triangle_index * 3],
+    //         self.adjacent_triangles[triangle_index * 3 + 1],
+    //         self.adjacent_triangles[triangle_index * 3 + 2],
+    //     )
+    // }
+
+    pub fn get_triangle(&self, idx: usize) -> Triangle {
+        let triangle = Triangle::new(
+            self.points[idx * 3],
+            self.points[idx * 3 + 1],
+            self.points[idx * 3 + 2],
         )
         .with_adjacent(
-            self.adjacent_triangles[triangle_index * 3],
-            self.adjacent_triangles[triangle_index * 3 + 1],
-            self.adjacent_triangles[triangle_index * 3 + 2],
-        )
+            self.adjacent_triangles[idx * 3],
+            self.adjacent_triangles[idx * 3 + 1],
+            self.adjacent_triangles[idx * 3 + 2],
+        );
+        triangle
     }
 
     /// Given the outline of a closed polygon, expressed as a list of vertices, it finds all the triangles that lay inside of the figure.

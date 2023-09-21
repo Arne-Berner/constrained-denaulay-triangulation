@@ -2,11 +2,16 @@ use bevy::{prelude::Gizmos, prelude::Vec2};
 //TODO ADD TESTS FOR EVERY FUNCTION (in docs)
 
 use crate::{
-    delaunay_triangulation::normalize,
+    delaunay_triangulation::{
+        data_structure::{Triangle, TriangleSet},
+        normalize,
+    },
+    math_utils,
     point_bin_grid::PointBinGrid,
-    triangle_set::{DelaunayTriangle, Triangle2D, TriangleSet}, math_utils,
+    triangle_set::{DelaunayTriangle, Triangle2D, TriangleSetOld},
 };
 
+use super::data_structure::{FoundOrAdded, TriangleInfo};
 
 pub fn triangulate(
     // might need to be a ref, for it to work with other systems
@@ -17,7 +22,6 @@ pub fn triangulate(
 ) {
     // Initialize containers
     let mut triangle_set = TriangleSet::new(input_points.len() - 2);
-    //let mut adjacent_triangles_with_edge = Some(Vec::<(usize, usize)>::with_capacity(input_points.len() - 2));
     let mut triangles_to_remove = Vec::<usize>::new();
 
     let (normalized_points, bounds) = normalize::normalize_points(input_points);
@@ -37,19 +41,12 @@ pub fn triangulate(
     println!("grid with points: {:?}", grid);
 
     // 3: Supertriangle initialization
-    let supertriangle = Triangle2D::new(
+    let supertriangle = Triangle::new(
         Vec2::new(-100.0, -100.0),
         Vec2::new(100.0, -100.0),
         Vec2::new(0.0, 100.0),
     );
-    triangle_set.add_triangle_from_points(
-        supertriangle.get_vertex(0),
-        supertriangle.get_vertex(1),
-        supertriangle.get_vertex(2),
-        None,
-        None,
-        None,
-    );
+    triangle_set.add_triangle(supertriangle);
 
     // 4: (loop over each point) For each point P in the list of sorted points, do steps 5-7
     // Points are added one at a time, and points that are close together are inserted together because they are sorted in the grid,
@@ -57,10 +54,7 @@ pub fn triangulate(
     for cell in grid.cells().iter() {
         for point in cell {
             // All the points in the bin are added together, one by one
-            add_point_to_triangulation(
-                &mut triangle_set,
-                *point,
-            );
+            triangulate_point(&mut triangle_set, *point);
         }
     }
 
@@ -98,7 +92,7 @@ pub fn triangulate(
                     continue;
                 }
 
-                let added_point_index = add_point_to_triangulation(
+                let added_point_index = triangulate_point(
                     &mut adjacent_triangles_with_edge,
                     &mut triangle_set,
                     &mut self.adjacent_triangle_edges,
@@ -139,18 +133,14 @@ pub fn triangulate(
     DelaunayTriangulation::denormalize_points(&mut triangle_set.points, &main_point_cloud_bounds);
 }
 
-fn add_point_to_triangulation(
-    triangle_set: &mut TriangleSet,
-    point_to_insert: Vec2,
-) -> Option<usize> {
+fn triangulate_point(triangle_set: &mut TriangleSet, point_to_insert: Vec2) -> Option<usize> {
     // Note: Adjacent triangle, opposite to the inserted point, is always at index 1
     // Note 2: Adjacent triangles are stored CCW automatically, their index matches the index of the first vertex in every edge, and it is known that vertices are stored CCW
 
     // 4.1: Check point existence
-    let existing_point_index = triangle_set.get_index_of_point(point_to_insert);
-
-    if let Some(index) = existing_point_index {
-        return Some(index);
+    let (inserted_point_index, found) = triangle_set.add_point(point_to_insert);
+    if found == FoundOrAdded::Found {
+        return Some(inserted_point_index);
     }
 
     // 4.2: Search containing triangle
@@ -158,36 +148,37 @@ fn add_point_to_triangulation(
     if let Some(containing_triangle_index) = triangle_set
         .find_triangle_that_contains_point(point_to_insert, triangle_set.triangle_count() - 1)
     {
-        let mut containing_triangle = triangle_set.get_triangle(containing_triangle_index);
-
-        // 4.3: Store the point
-        // Inserting a new point into a triangle splits it into 3 pieces, 3 new triangles
-        let inserted_point_index = triangle_set.add_point(point_to_insert);
-        let original_points = (
-            containing_triangle.p[0],
-            containing_triangle.p[1],
-            containing_triangle.p[2],
-        );
+        let mut containing_triangle = triangle_set.get_triangle_info(containing_triangle_index);
 
         // 5. Insert new point in triangulation and create 2 new triangles off of it
         // all the triangles take inserted point as there vertex 0, so that adjacent is 1
-        let mut first_triangle =
-            DelaunayTriangle::new(inserted_point_index, original_points.0, original_points.1);
-        first_triangle.adjacent[0] = Some(triangle_set.triangle_count() + 1); // the second triangle
-        first_triangle.adjacent[1] = containing_triangle.adjacent[0]; // the originals adjacent
-        first_triangle.adjacent[2] = Some(containing_triangle_index); // this is the original triangle, that will get changed a bit
-        let first_triangle_index = triangle_set.add_triangle(&first_triangle);
+        let mut first_triangle = TriangleInfo::new([
+            inserted_point_index,
+            containing_triangle.vertex_indices[0],
+            containing_triangle.vertex_indices[1],
+        ])
+        .with_adjacent(
+            Some(triangle_set.triangle_count() + 1), // the second triangle
+            containing_triangle.adjacent_triangle_indices[0], // the originals adjacent
+            Some(containing_triangle_index), // this is the original triangle, that will get changed a bit
+        );
+        let first_triangle_index = triangle_set.add_triangle_info(&first_triangle);
 
-        let mut second_triangle =
-            DelaunayTriangle::new(inserted_point_index, original_points.2, original_points.1);
+        let mut second_triangle = DelaunayTriangle::new(
+            inserted_point_index,
+            containing_triangle.vertex_indices[2],
+            containing_triangle.vertex_indices[1],
+        )
+        .with_adjacent(
+            Some(containing_triangle_index),
+            containing_triangle.adjacent_triangle_indices[2],
+            Some(first_triangle_index),
+        );
 
-        second_triangle.adjacent[0] = Some(containing_triangle_index);
-        second_triangle.adjacent[1] = containing_triangle.adjacent[2];
-        second_triangle.adjacent[2] = Some(first_triangle_index);
-        let second_triangle_index = triangle_set.add_triangle(&second_triangle);
+        let second_triangle_index = triangle_set.add_triangle_info(&second_triangle);
 
         // Sets the adjacency of the triangles that were adjacent to the original containing triangle
-        if let Some(adjacent_triangle) = first_triangle.adjacent[1] {
+        if let Some(adjacent_triangle) = first_triangle.adjacent_triangle_indices[1] {
             triangle_set.replace_adjacent(
                 adjacent_triangle,
                 Some(containing_triangle_index),
@@ -205,16 +196,17 @@ fn add_point_to_triangulation(
         // 5.1: Transform containing triangle into the third
         // Original triangle is transformed into the third triangle after the point has split the containing triangle into 3
         // using that triangle to keep main, so that the least has to change
-        containing_triangle.p[0] = inserted_point_index;
-        containing_triangle.adjacent[0] = Some(first_triangle_index);
-        containing_triangle.adjacent[2] = Some(second_triangle_index);
+        containing_triangle.vertex_indices[0] = inserted_point_index;
+        containing_triangle.adjacent_triangle_indices[0] = Some(first_triangle_index);
+        containing_triangle.adjacent_triangle_indices[2] = Some(second_triangle_index);
         triangle_set.replace_triangle(containing_triangle_index, &containing_triangle);
 
-        // there might be a good capacity to choose here
-        let adjacent_triangle = Vec::<Triangle2D>::new();
+        // TODO there might be a good capacity to choose here
+        let adjacent_triangle = Vec::<Triangle>::new();
+        // REWORK THIS
         // 6: Add new triangles to a stack
-        if let Some(adjacent_index) = containing_triangle.adjacent[1] {
-            adjacent_triangle.push(triangle_set.get_triangle_points(adjacent_index));
+        if let Some(adjacent_index) = containing_triangle.adjacent_triangle_indices[1] {
+            adjacent_triangle.push(triangle_set.get_triangle(adjacent_index));
         }
 
         if let Some(adjacent_index) = first_triangle.adjacent[1] {
@@ -226,8 +218,8 @@ fn add_point_to_triangulation(
         }
         // 7.1: Check Delaunay constraint
         while let Some(triangle_to_check) = adjacent_triangle.pop() {
-            if math_utils::is_point_inside_circumcircle(triangle_to_check, point_to_insert){
-                triangle_set.get
+            if math_utils::is_point_inside_circumcircle(triangle_to_check, point_to_insert) {
+                triangle_set.get_triangle(idx)
                 // get adjacent_triangles vom adjacent triangle, welche nicht am anliegenden edge sind und packe sie auf den stapel
                 // speicher die jeweiligen kanten mit dazu zu den adjacent triangles (oder nur die kanten)
                 // swap diagonal (diagnal edge + 2 ist der gegenüberliegende punkt... also eigentlich immer?)
