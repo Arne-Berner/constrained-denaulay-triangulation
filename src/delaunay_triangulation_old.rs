@@ -444,9 +444,7 @@ impl DelaunayTriangulation {
         adjacent_triangle_edges: &mut Vec<usize>,
     ) {
         while adjacent_triangles_to_process.len() > 0 {
-            let current_triangle_to_swap = adjacent_triangles_to_process.pop().expect(
-                "Since we checked for the triangles to process before, there should be some here",
-            );
+            let current_triangle_to_swap = adjacent_triangles_to_process.pop().unwrap();
             let mut triangle = triangle_set.get_triangle(current_triangle_to_swap);
 
             let opposite_triangle_index = adjacent_triangle_edges
