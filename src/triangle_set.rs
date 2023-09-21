@@ -80,7 +80,6 @@ impl DelaunayTriangleEdge {
         edge_vertex_a: usize,
         edge_vertex_b: usize,
     ) -> Self {
-        Edge::new(edge_vertex_a, edge_vertex_b);
         DelaunayTriangleEdge {
             triangle_index,
             edge_index,
@@ -115,21 +114,18 @@ impl DelaunayTriangle {
     }
 
     // TODO use builder pattern instead
-    // Original code used -1 for non existent adjacents instead of option
     // Is that more performant?
     /// Constructor that receives all the data.
-    pub fn new_with_adjacent(
-        point0: usize,
-        point1: usize,
-        point2: usize,
+    pub fn with_adjacent(
+        mut self,
         adjacent0: Option<usize>,
         adjacent1: Option<usize>,
         adjacent2: Option<usize>,
-    ) -> Self {
-        DelaunayTriangle {
-            p: [point0, point1, point2],
-            adjacent: [adjacent0, adjacent1, adjacent2],
-        }
+    ) -> DelaunayTriangle {
+        self.adjacent[0] = adjacent0;
+        self.adjacent[1] = adjacent1;
+        self.adjacent[2] = adjacent2;
+        self
     }
 }
 pub struct TriangleSet {
@@ -141,12 +137,6 @@ pub struct TriangleSet {
 
     /// The real points in the 2D space.
     pub points: Vec<Vec2>,
-    //TODO does this work better as Option?
-    // Indicates that the index of a vertex, edge or triangle is not defined or was not found
-    //const NOT_FOUND: usize = -1,
-
-    // Indicates that there is no adjacent triangle
-    //const NO_ADJACENT_TRIANGLE: usize = -1,
 }
 
 impl TriangleSet {
@@ -298,10 +288,12 @@ impl TriangleSet {
     ///
     /// The triangle data.
     pub fn get_triangle(&self, triangle_index: usize) -> DelaunayTriangle {
-        DelaunayTriangle::new_with_adjacent(
+        DelaunayTriangle::new(
             self.triangle_vertices[triangle_index * 3],
             self.triangle_vertices[triangle_index * 3 + 1],
             self.triangle_vertices[triangle_index * 3 + 2],
+        )
+        .with_adjacent(
             self.adjacent_triangles[triangle_index * 3],
             self.adjacent_triangles[triangle_index * 3 + 1],
             self.adjacent_triangles[triangle_index * 3 + 2],
