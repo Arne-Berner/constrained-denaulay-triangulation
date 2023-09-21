@@ -173,6 +173,7 @@ fn add_point_to_triangulation(
             containing_triangle.p[2],
         );
 
+        // TODO comment on using P as first vertex for each triangle
         // 4.4: Create 2 triangles
         // rework so that it is easier to understand with own drawing
         let mut first_triangle =
