@@ -2,8 +2,7 @@ pub mod point_bin_grid;
 pub mod triangle_set;
 pub mod math_utils;
 pub mod delaunay_triangulation;
-use bevy::{prelude::*, render::primitives::Aabb};
-use delaunay_triangulation::DelaunayTriangulation;
+use bevy::prelude::*;
 
 fn main() {
     App::new()
@@ -24,9 +23,6 @@ fn setup(mut commands: Commands, gizmos: Gizmos) {
             ..default()
         },
     ));
-    println!("Before creating triangulation");
-    let triangulation = DelaunayTriangulation::new(100, Vec2::new(1., 1.)* 50000., None, None, vec![], None);
-    println!("After creating triangulation");
 let p0 = Vec2::new(-6189.595, 8209.541);
 let p1 = Vec2::new(-5733.924, 8823.252);
 let p2 = Vec2::new(-5748.702, 8231.538);
@@ -37,10 +33,10 @@ let p6 = Vec2::new(-6759.087, 8353.894);
 let p7 = Vec2::new(-6763.313, 8504.048);
 let p8 = Vec2::new(-6284.938, 8771.748);
 let points = vec![p0, p1, p2, p3, p4, p5, p6, p7, p8];
+// holes are too near each other after normalization
 let hole1 = vec![Vec2::new(1., 1.), Vec2::new(1.,2.),Vec2::new(2.,2.), Vec2::new(2., 1.)];
 let holes = vec![hole1];
-    println!("Before triangulation");
-    triangulation.triangulate(&points, 0., None, gizmos);
+    // triangulation
     println!("--------------------------------------------------------------");
     println!("DONE!");
     println!("--------------------------------------------------------------");

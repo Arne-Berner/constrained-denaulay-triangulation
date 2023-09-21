@@ -4,15 +4,14 @@ use crate::math_utils;
 
 /// A 2D triangle.
 pub struct Triangle2D {
-    // TODO make points accessible via "points" method
     /// The first vertex.
-    pub p0: Vec2,
+    p0: Vec2,
 
     /// The second vertex.
-    pub p1: Vec2,
+    p1: Vec2,
 
     /// The third vertex.
-    pub p2: Vec2,
+    p2: Vec2,
 }
 
 impl Triangle2D {
@@ -26,7 +25,7 @@ impl Triangle2D {
     }
 
     /// Gets a vertex by its index.
-    fn get_vertex(&self, index: usize) -> Vec2 {
+    pub fn get_vertex(&self, index: usize) -> Vec2 {
         debug_assert!(
             index < 3,
             "The index of the triangle vertex must be in the range [0, 2]."
@@ -62,11 +61,10 @@ impl Edge {
         self.edge_vertex_b
     }
 
-    pub fn vertices(&self) -> (usize, usize){
+    pub fn vertices(&self) -> (usize, usize) {
         (self.edge_vertex_a, self.edge_vertex_b)
     }
 }
-
 
 // TODO this should be renamed, since it has nothing to do with delaunay
 pub struct DelaunayTriangleEdge {
@@ -134,7 +132,7 @@ impl DelaunayTriangle {
         }
     }
 }
-pub struct DelaunayTriangleSet {
+pub struct TriangleSet {
     /// The indices of the adjacent triangles of every triangle, so there are 3 indices per triangle, and each index is the position of the triangle in groups of 3.
     adjacent_triangles: Vec<Option<usize>>,
 
@@ -151,10 +149,10 @@ pub struct DelaunayTriangleSet {
     //const NO_ADJACENT_TRIANGLE: usize = -1,
 }
 
-impl DelaunayTriangleSet {
+impl TriangleSet {
     /// Constructor that receives the expected number of triangles to store. It will reserve memory accordingly.
     pub fn new(expected_triangles: usize) -> Self {
-        DelaunayTriangleSet {
+        TriangleSet {
             adjacent_triangles: Vec::with_capacity(expected_triangles * 3),
             triangle_vertices: Vec::with_capacity(expected_triangles * 3),
             points: Vec::with_capacity(expected_triangles),
@@ -216,7 +214,7 @@ impl DelaunayTriangleSet {
     /// Returns the index of the point.
     pub fn add_point(&mut self, point: Vec2) -> usize {
         self.points.push(point);
-        self.points.len() as usize - 1
+        self.points.len() - 1
     }
     /// Forms a new triangle using new points.
     ///
@@ -260,10 +258,7 @@ impl DelaunayTriangleSet {
     ///
     /// * `vertex_index` - The index of the point that is a vertex of the triangles.
     /// * `output_triangles` - The indices of the triangles that have that point as one of their vertices. No elements will be removed from the list.
-    pub fn get_triangles_with_vertex(
-        &self,
-        vertex_index: usize,
-    ) -> Vec<usize> {
+    pub fn get_triangles_with_vertex(&self, vertex_index: usize) -> Vec<usize> {
         let mut output_triangles = Vec::new();
         for i in 0..self.triangle_count() {
             for j in 0..3 {
@@ -512,18 +507,16 @@ impl DelaunayTriangleSet {
     /// # Returns
     ///
     /// The index of the point. If the point does not exist, -1 is returned.
-    pub fn get_index_of_point(&self, point: Vec2) -> Option<usize> {
-        let mut index = 0;
-
-        while index < self.points.len() && self.points[index] != point {
-            index += 1;
+    pub fn get_index_of_point(&self, point_to_look_for: Vec2) -> Option<usize> {
+        let mut index = None;
+        for (idx, point) in self.points.iter().enumerate() {
+            if *point == point_to_look_for {
+                index = Some(idx);
+                break;
+            }
         }
 
-        if index == self.points.len() {
-            None
-        } else {
-            Some(index)
-        }
+        index
     }
 
     /// Given an edge AB, it searches for the triangle that has an edge with the same vertices in the same order.
@@ -557,12 +550,17 @@ impl DelaunayTriangleSet {
     /// point: The point expected to be contained by a triangle.
     /// start_triangle: The index of the first triangle to check.
     /// Returns the index of the triangle that contains the point.
-    pub fn find_triangle_that_contains_point(&self, point: Vec2, start_triangle: usize) -> usize {
+    pub fn find_triangle_that_contains_point(
+        &self,
+        point: Vec2,
+        start_triangle: usize,
+    ) -> Option<usize> {
         let mut is_triangle_found = false;
         let mut triangle_index = start_triangle;
         let mut checked_triangles = 0;
 
         while !is_triangle_found && checked_triangles < self.triangle_count() {
+            //weird place
             is_triangle_found = true;
             for i in 0..3 {
                 // if it is outside of the triangle
@@ -572,23 +570,26 @@ impl DelaunayTriangleSet {
                     point,
                 ) {
                     // The point is in the exterior of the triangle (vertices are sorted CCW, the right side is always the exterior from the perspective of the A->B edge)
-                    // It can not form a circle, because it will only be on the right side for max 2 edges
+                    // This "path finding" can not form a circle, because it will only be on the right side for max 2 edges
+                    // This will end in an endless loop
                     if let Some(index) = self.adjacent_triangles[triangle_index * 3 + i] {
                         triangle_index = index;
+                        is_triangle_found = false;
+                        break;
+                    } else {
+                        println!("No adjacent at this point");
                     }
-                    is_triangle_found = false;
-                    break;
                 }
             }
-
             checked_triangles += 1;
         }
 
         if checked_triangles >= self.triangle_count() && self.triangle_count() > 1 {
             println!("Unable to find a triangle that contains the point ({:?}), starting at triangle {}. Are you generating very small triangles?", point, start_triangle);
+            return None;
         }
 
-        triangle_index
+        Some(triangle_index)
     }
 
     /// Given an edge AB, it searches for a triangle that contains the first point and the beginning of the edge.
