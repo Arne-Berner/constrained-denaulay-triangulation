@@ -1,6 +1,10 @@
 use bevy::prelude::Vec2;
 
-pub fn normalize_points(points: Vec<Vec2>) -> Vec<Vec2>{
+pub struct Bounds{
+    min: Vec2,
+    max: Vec2
+}
+pub fn normalize_points(points: Vec<Vec2>) -> (Vec<Vec2>, Bounds){
     let mut min = Vec2::new(f32::MAX, f32::MAX);
     let mut max = Vec2::new(f32::MIN, f32::MIN);
 
@@ -21,9 +25,10 @@ pub fn normalize_points(points: Vec<Vec2>) -> Vec<Vec2>{
             min.y = points[i].y;
         }
     }
+    let bounds = Bounds{min, max};
 
     for point in &points {
         *point = (*point - min) / (max - min)
     }
-    points
+    (points, bounds)
 }
