@@ -1,5 +1,6 @@
 use bevy::prelude::{Color, Gizmos, Vec2};
 
+#[derive(Debug)]
 pub struct PointBinGrid {
     pub cells: Vec<Vec<Vec2>>,
     cell_size: Vec2,

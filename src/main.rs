@@ -13,7 +13,7 @@ fn main() {
         .run();
 }
 
-fn setup(mut commands: Commands) {
+fn setup(mut commands: Commands, gizmos: Gizmos) {
     commands.spawn(Camera2dBundle::default());
     // text
     commands.spawn(TextBundle::from_section(
@@ -25,7 +25,7 @@ fn setup(mut commands: Commands) {
         },
     ));
     println!("Before creating triangulation");
-    let triangulation = DelaunayTriangulation::new(100, Vec2::new(1., 1.)* 50000., None, None, vec![], None, Aabb::from_min_max(Vec3::new(-1.,1.,-1.)*10000., Vec3::new(1., 1., 1.)*10000.));
+    let triangulation = DelaunayTriangulation::new(100, Vec2::new(1., 1.)* 50000., None, None, vec![], None);
     println!("After creating triangulation");
 let p0 = Vec2::new(-6189.595, 8209.541);
 let p1 = Vec2::new(-5733.924, 8823.252);
@@ -40,7 +40,7 @@ let points = vec![p0, p1, p2, p3, p4, p5, p6, p7, p8];
 let hole1 = vec![Vec2::new(1., 1.), Vec2::new(1.,2.),Vec2::new(2.,2.), Vec2::new(2., 1.)];
 let holes = vec![hole1];
     println!("Before triangulation");
-    triangulation.triangulate(&points, 0., None);
+    triangulation.triangulate(&points, 0., None, gizmos);
     println!("--------------------------------------------------------------");
     println!("DONE!");
     println!("--------------------------------------------------------------");

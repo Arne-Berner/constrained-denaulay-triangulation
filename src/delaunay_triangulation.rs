@@ -1,4 +1,4 @@
-use bevy::{math::Vec3A, prelude::Vec2, render::primitives::Aabb};
+use bevy::{math::Vec3A, prelude::{Vec2, Gizmos, Color}, render::primitives::Aabb};
 use std::time::Duration;
 
 use crate::{
@@ -27,10 +27,6 @@ pub struct DelaunayTriangulation {
     // The list of triangles to be discarded (holes and supertriangle)
     // TODO make this a ressource
     triangles_to_remove: Option<Vec<usize>>,
-
-    // The bounding box of the main point cloud
-    // TODO make this a ressource
-    main_point_cloud_bounds: Aabb,
 }
 
 impl DelaunayTriangulation {
@@ -41,7 +37,6 @@ impl DelaunayTriangulation {
         adjacent_triangles: Option<Vec<usize>>,
         adjacent_triangle_edges: Vec<usize>,
         triangles_to_remove: Option<Vec<usize>>,
-        main_point_cloud_bounds: Aabb,
     ) -> Self {
         DelaunayTriangulation {
             grid: PointBinGrid::new(cells_per_side, grid_size),
@@ -49,7 +44,6 @@ impl DelaunayTriangulation {
             adjacent_triangles,
             adjacent_triangle_edges,
             triangles_to_remove,
-            main_point_cloud_bounds,
         }
     }
     /// Gets the metadata of all the generated triangles.
@@ -80,6 +74,7 @@ impl DelaunayTriangulation {
         input_points: &Vec<Vec2>,
         maximum_area_tesselation: f32,
         constrained_edges: Option<&Vec<Vec<Vec2>>>,
+        mut gizmos: Gizmos,
     ) {
         // Initialize containers
         let mut triangle_set = DelaunayTriangleSet::new(0);
@@ -102,31 +97,41 @@ impl DelaunayTriangulation {
             adjacent_triangles = self.adjacent_triangles.unwrap();
         }
 
-        let mut triangles_to_remove = Vec::<usize>::new();
+        let mut triangles_to_remove ;
         if let Some(mut unwrapped) = self.triangles_to_remove {
             unwrapped.clear();
             triangles_to_remove = unwrapped;
+        } else {
+            triangles_to_remove = Vec::<usize>::new();
         }
 
-        println!("before normalization");
+        println!("all points: {:?}", &input_points);
         // 1: Normalization
-        self.main_point_cloud_bounds =
+        // WHAT IS THE BOUNDING BOX FOR?! this seems really convoluted
+        let main_point_cloud_bounds =
             DelaunayTriangulation::calculate_bounds_with_left_bottom_corner_at_origin(
                 &input_points,
             );
 
+            // this is centered around the input points
+        println!("main point cloud: {:?}", &main_point_cloud_bounds);
         let mut normalized_points = input_points.clone();
         DelaunayTriangulation::normalize_points(
             &mut normalized_points,
-            &self.main_point_cloud_bounds,
+            &main_point_cloud_bounds,
         );
 
-        println!("before addition of points to the space partitioning grid");
+        println!("normalized points: {:?}", &normalized_points);
+        gizmos.line_2d(Vec2::new(main_point_cloud_bounds.min().x, main_point_cloud_bounds.min().z), Vec2::new(main_point_cloud_bounds.max().x, main_point_cloud_bounds.max().z), Color::WHITE);
         // 2: Addition of points to the space partitioning grid
         let normalized_cloud_bounds =
             DelaunayTriangulation::calculate_bounds_with_left_bottom_corner_at_origin(
                 &normalized_points,
             );
+            // TODO infinity sounds bad for y axis
+        println!("normalized cloud bounds: {:?}", &normalized_cloud_bounds);
+        gizmos.line_2d(Vec2::new(normalized_cloud_bounds.min().x, normalized_cloud_bounds.min().z), Vec2::new(normalized_cloud_bounds.max().x, normalized_cloud_bounds.max().z), Color::WHITE);
+
         let mut grid = PointBinGrid::new(
             (input_points.len() as f32).sqrt().sqrt().ceil() as usize,
             Vec2::new(
@@ -139,6 +144,7 @@ impl DelaunayTriangulation {
             grid.add_point(point);
         }
 
+        println!("grid with points: {:?}", grid);
         println!("before supertriangle initialization");
         // 3: Supertriangle initialization
         let supertriangle = Triangle2D::new(
@@ -191,7 +197,7 @@ impl DelaunayTriangulation {
                 let mut normalized_constrained_edges = constrained_edge.clone();
                 DelaunayTriangulation::normalize_points(
                     &mut normalized_constrained_edges,
-                    &self.main_point_cloud_bounds,
+                    &main_point_cloud_bounds,
                 );
 
                 let mut polygon_edge_indices = Vec::new();
@@ -249,7 +255,7 @@ impl DelaunayTriangulation {
 
         DelaunayTriangulation::denormalize_points(
             &mut triangle_set.points,
-            &self.main_point_cloud_bounds,
+            &main_point_cloud_bounds,
         );
     }
 
@@ -888,7 +894,7 @@ impl DelaunayTriangulation {
     ///
     /// The bounds that contains all the points.
     fn calculate_bounds_with_left_bottom_corner_at_origin(points: &Vec<Vec2>) -> Aabb {
-        // TODO is min and max switched, because of the reversed coordinates?
+        // new min is max, because everything that comes needs to be smaller than this
         let mut new_min = Vec3A::new(f32::MAX, 0., f32::MAX);
         let mut new_max = Vec3A::new(f32::MIN, 0., f32::MIN);
 
@@ -911,11 +917,11 @@ impl DelaunayTriangulation {
         }
 
         let size = Vec3A::new(
-            (new_max.x - new_min.x).abs(),
+            new_max.x - new_min.x,
             0.,
-            (new_max.y - new_min.y).abs(),
+            new_max.y - new_min.y,
         );
-        let extends = size / 2.;
+        let extends = size * 0.5;
 
         Aabb {
             center: extends + new_min,
@@ -930,11 +936,31 @@ impl DelaunayTriangulation {
     ///
     /// * `input_output_points` - The input points to normalize. The points in the list will be updated.
     /// * `bounds` - The bounding box in which the normalization is based.
-    fn normalize_points(input_output_points: &mut Vec<Vec2>, bounds: &Aabb) {
-        let maximum_dimension = f32::max(bounds.half_extents.x * 2., bounds.half_extents.z * 2.);
+    fn normalize_points(points: &mut Vec<Vec2>) {
+        let mut min = Vec2::new(f32::MAX,f32::MAX);
+        let mut max = Vec2::new(f32::MIN, f32::MIN);
 
-        for point in input_output_points {
-            *point = (*point - Vec2::new(bounds.min().x, bounds.min().z)) / maximum_dimension;
+
+        for i in 0..points.len() {
+            if points[i].x > max.x {
+                max.x = points[i].x;
+            }
+
+            if points[i].y > max.y {
+                max.y = points[i].y;
+            }
+
+            if points[i].x < min.x {
+                min.x = points[i].x;
+            }
+
+            if points[i].y < min.y {
+                min.y = points[i].y;
+            }
+        }
+
+        for point in points {
+            *point = (*point - min) / (max - min)
         }
     }
 
