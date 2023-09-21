@@ -11,7 +11,7 @@ use crate::{
     triangle_set::{DelaunayTriangle, Triangle2D, TriangleSetOld},
 };
 
-use super::data_structure::{FoundOrAdded, TriangleInfo};
+use super::{data_structure::{FoundOrAdded, TriangleInfo}, math_utils::is_point_inside_circumcircle};
 
 pub fn triangulate(
     // might need to be a ref, for it to work with other systems
@@ -164,10 +164,10 @@ fn triangulate_point(triangle_set: &mut TriangleSet, point_to_insert: Vec2) -> O
         );
         let first_triangle_index = triangle_set.add_triangle_info(&first_triangle);
 
-        let mut second_triangle = DelaunayTriangle::new(
-            inserted_point_index,
+        let mut second_triangle = TriangleInfo::new(
+            [inserted_point_index,
             containing_triangle.vertex_indices[2],
-            containing_triangle.vertex_indices[1],
+            containing_triangle.vertex_indices[1]],
         )
         .with_adjacent(
             Some(containing_triangle_index),
@@ -185,7 +185,7 @@ fn triangulate_point(triangle_set: &mut TriangleSet, point_to_insert: Vec2) -> O
                 Some(first_triangle_index),
             )
         }
-        if let Some(adjacent_triangle) = second_triangle.adjacent[1] {
+        if let Some(adjacent_triangle) = second_triangle.adjacent_triangle_indices[1] {
             triangle_set.replace_adjacent(
                 adjacent_triangle,
                 Some(containing_triangle_index),
@@ -209,16 +209,16 @@ fn triangulate_point(triangle_set: &mut TriangleSet, point_to_insert: Vec2) -> O
             adjacent_triangle.push(triangle_set.get_triangle(adjacent_index));
         }
 
-        if let Some(adjacent_index) = first_triangle.adjacent[1] {
-            adjacent_triangle.push(triangle_set.get_triangle_points(adjacent_index));
+        if let Some(adjacent_index) = first_triangle.adjacent_triangle_indices[1] {
+            adjacent_triangle.push(triangle_set.get_triangle(adjacent_index));
         }
 
-        if let Some(adjacent_index) = second_triangle.adjacent[1] {
-            adjacent_triangle.push(triangle_set.get_triangle_points(adjacent_index));
+        if let Some(adjacent_index) = second_triangle.adjacent_triangle_indices[1] {
+            adjacent_triangle.push(triangle_set.get_triangle(adjacent_index));
         }
         // 7.1: Check Delaunay constraint
         while let Some(triangle_to_check) = adjacent_triangle.pop() {
-            if math_utils::is_point_inside_circumcircle(triangle_to_check, point_to_insert) {
+            if is_point_inside_circumcircle(triangle_to_check, point_to_insert) {
                 triangle_set.get_triangle(idx)
                 // get adjacent_triangles vom adjacent triangle, welche nicht am anliegenden edge sind und packe sie auf den stapel
                 // speicher die jeweiligen kanten mit dazu zu den adjacent triangles (oder nur die kanten)

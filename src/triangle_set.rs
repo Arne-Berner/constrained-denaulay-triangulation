@@ -2,32 +2,6 @@ use bevy::prelude::{Color, Vec2};
 
 use crate::math_utils;
 
-pub struct Triangle {
-    /// The indices of the points that define the triangle.
-    pub p: [Vec2; 3],
-    /// The indices of the triangles that are adjacent.
-    pub adjacent: [Option<usize>; 3],
-}
-impl Triangle {
-    pub fn new(point0: Vec2, point1: Vec2, point2: Vec2) -> Self {
-        Triangle {
-            p: [point0, point1, point2],
-            adjacent: [None, None, None],
-        }
-    }
-
-    pub fn with_adjacent(
-        mut self,
-        adjacent0: Option<usize>,
-        adjacent1: Option<usize>,
-        adjacent2: Option<usize>,
-    ) -> Triangle {
-        self.adjacent[0] = adjacent0;
-        self.adjacent[1] = adjacent1;
-        self.adjacent[2] = adjacent2;
-        self
-    }
-}
 
 /// A 2D triangle.
 pub struct Triangle2D {
