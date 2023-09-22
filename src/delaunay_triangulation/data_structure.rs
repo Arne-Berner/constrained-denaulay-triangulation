@@ -2,6 +2,13 @@ use bevy::prelude::Vec2;
 
 use crate::math_utils;
 
+use super::math_utils::is_point_to_the_right_of_edge;
+
+pub struct TriangleIndexPair {
+    current: usize,
+    adjacent: usize,
+}
+
 #[derive(PartialEq)]
 pub enum FoundOrAdded {
     Found,
@@ -84,7 +91,7 @@ impl TriangleSet {
             is_triangle_found = true;
             for vertex_index in 0..3 {
                 // if it is outside of the triangle
-                if math_utils::is_point_to_the_right_of_edge(
+                if is_point_to_the_right_of_edge(
                     self.get_point_from_index(triangle_index, vertex_index),
                     self.get_point_from_index(triangle_index, vertex_index + 1 % 3),
                     point,
@@ -130,11 +137,42 @@ impl TriangleSet {
     pub fn replace_triangle(&mut self, triangle_index: usize, new_triangle: &TriangleInfo) {
         for i in 0..3 {
             self.triangle_infos[triangle_index].vertex_indices[i] = new_triangle.vertex_indices[i];
-            self.triangle_infos[triangle_index].adjacent_triangle_indices[i] = new_triangle.adjacent_triangle_indices[i];
+            self.triangle_infos[triangle_index].adjacent_triangle_indices[i] =
+                new_triangle.adjacent_triangle_indices[i];
         }
     }
-    // fn get_adjacent_triangles_except(exception_idx: usize){
 
+    pub fn replace_adjacent_vertices(
+        &mut self,
+        triangle_index: usize,
+        new_adjacent_indices: [Option<usize>;3],
+    ) {
+        self.triangle_infos[triangle_index].adjacent_triangle_indices = new_adjacent_indices;
+    }
+
+    pub fn replace_vertex_with_vertex(
+        &mut self,
+        vertex_position: usize,
+        triangle_index: usize,
+        new_vertex: usize,
+    ) {
+        self.triangle_infos[triangle_index].vertex_indices[vertex_position] = new_vertex;
+    }
+
+    // pub fn get_adjacent_triangles_except(&self, exception_index: usize, triangle_index: usize)-> Vec<Option<usize>> {
+    //     let mut result = Vec::new();
+    //     for i in 0..3 {
+    //         if let Some(adjacent_index) =
+    //             self.triangle_infos[triangle_index].adjacent_triangle_indices[i]
+    //         {
+    //             if !(adjacent_index == exception_index) {
+    //                 result.push(Some(adjacent_index));
+    //             }
+    //         } else {
+    //             result.push(None)
+    //         }
+    //     }
+    //     result
     // }
 }
 

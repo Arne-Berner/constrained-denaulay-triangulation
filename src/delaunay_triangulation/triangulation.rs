@@ -1,17 +1,25 @@
-use bevy::{prelude::Gizmos, prelude::Vec2};
+use bevy::{prelude::Gizmos, prelude::Vec2, utils::petgraph::adj};
 //TODO ADD TESTS FOR EVERY FUNCTION (in docs)
 
-use crate::{
-    delaunay_triangulation::{
-        data_structure::{Triangle, TriangleSet},
-        normalize,
-    },
-    math_utils,
-    point_bin_grid::PointBinGrid,
-    triangle_set::{DelaunayTriangle, Triangle2D, TriangleSetOld},
+use crate::delaunay_triangulation::{
+    data_structure::{Triangle, TriangleSet},
+    normalize,
 };
 
-use super::{data_structure::{FoundOrAdded, TriangleInfo}, math_utils::is_point_inside_circumcircle};
+use super::{
+    data_structure::{FoundOrAdded, TriangleInfo},
+    math_utils::is_point_inside_circumcircle,
+};
+
+struct TriangleIndexPair {
+    pub adjacent: usize,
+    pub current: usize,
+}
+impl TriangleIndexPair {
+    fn new(adjacent: usize, current: usize) -> Self {
+        TriangleIndexPair { adjacent, current }
+    }
+}
 
 pub fn triangulate(
     // might need to be a ref, for it to work with other systems
@@ -164,11 +172,11 @@ fn triangulate_point(triangle_set: &mut TriangleSet, point_to_insert: Vec2) -> O
         );
         let first_triangle_index = triangle_set.add_triangle_info(&first_triangle);
 
-        let mut second_triangle = TriangleInfo::new(
-            [inserted_point_index,
+        let mut second_triangle = TriangleInfo::new([
+            inserted_point_index,
             containing_triangle.vertex_indices[2],
-            containing_triangle.vertex_indices[1]],
-        )
+            containing_triangle.vertex_indices[1],
+        ])
         .with_adjacent(
             Some(containing_triangle_index),
             containing_triangle.adjacent_triangle_indices[2],
@@ -202,34 +210,97 @@ fn triangulate_point(triangle_set: &mut TriangleSet, point_to_insert: Vec2) -> O
         triangle_set.replace_triangle(containing_triangle_index, &containing_triangle);
 
         // TODO there might be a good capacity to choose here
-        let adjacent_triangle = Vec::<Triangle>::new();
+        let index_pairs = Vec::<TriangleIndexPair>::new();
         // REWORK THIS
         // 6: Add new triangles to a stack
         if let Some(adjacent_index) = containing_triangle.adjacent_triangle_indices[1] {
-            adjacent_triangle.push(triangle_set.get_triangle(adjacent_index));
+            index_pairs.push(TriangleIndexPair {
+                adjacent: adjacent_index,
+                current: containing_triangle_index,
+            });
         }
 
         if let Some(adjacent_index) = first_triangle.adjacent_triangle_indices[1] {
-            adjacent_triangle.push(triangle_set.get_triangle(adjacent_index));
+            index_pairs.push(TriangleIndexPair {
+                adjacent: adjacent_index,
+                current: first_triangle_index,
+            });
         }
 
         if let Some(adjacent_index) = second_triangle.adjacent_triangle_indices[1] {
-            adjacent_triangle.push(triangle_set.get_triangle(adjacent_index));
+            index_pairs.push(TriangleIndexPair {
+                adjacent: adjacent_index,
+                current: second_triangle_index,
+            });
         }
         // 7.1: Check Delaunay constraint
-        while let Some(triangle_to_check) = adjacent_triangle.pop() {
-            if is_point_inside_circumcircle(triangle_to_check, point_to_insert) {
-                triangle_set.get_triangle(idx)
+        while let Some(index_pair) = index_pairs.pop() {
+            if is_point_inside_circumcircle(
+                triangle_set.get_triangle(index_pair.adjacent),
+                point_to_insert,
+            ) {
+                // delaunay constraint not fullfilled
+                let adjacent_info = triangle_set.get_triangle_info(index_pair.adjacent);
+                let current_info = triangle_set.get_triangle_info(index_pair.current);
+                let shared_vertex = current_info.vertex_indices[1];
+                let adj_shared_vertex = 0;
+                for idx in 0..adjacent_info.vertex_indices.len() {
+                    if shared_vertex == adjacent_info.vertex_indices[idx] {
+                        adj_shared_vertex == idx;
+                        break;
+                    }
+                }
+                let first_new_adjacent = adjacent_info.adjacent_triangle_indices[adj_shared_vertex];
+                let second_new_adjacent =
+                    adjacent_info.adjacent_triangle_indices[(adj_shared_vertex + 1) % 3];
+                let current_triangle_index =
+                    adjacent_info.adjacent_triangle_indices[(adj_shared_vertex + 2) % 3].unwrap();
+                let opposite_vertex = adjacent_info.vertex_indices[(adj_shared_vertex + 1) % 3];
+                let new_adjacent = TriangleInfo::new([
+                    current_info.vertex_indices[0],
+                    opposite_vertex,
+                    current_info.vertex_indices[2],
+                ])
+                .with_adjacent(
+                    Some(current_triangle_index),
+                    second_new_adjacent,
+                    current_info.adjacent_triangle_indices[2],
+                );
+                triangle_set.replace_triangle(index_pair.adjacent, &new_adjacent);
+                triangle_set.replace_vertex_with_vertex(2, current_triangle_index, opposite_vertex);
+                let new_adjacent_indices = [
+                    current_info.adjacent_triangle_indices[0],
+                    second_new_adjacent,
+                    Some(index_pair.adjacent),
+                ];
+                triangle_set
+                    .replace_adjacent_vertices(current_triangle_index, new_adjacent_indices);
+
+                //set new adjacents
+                if let Some(new_oppositve_index) = first_new_adjacent {
+                    index_pairs.push(TriangleIndexPair::new(
+                        new_oppositve_index,
+                        index_pair.current,
+                    ))
+                }
+                if let Some(new_oppositve_index) = second_new_adjacent {
+                    index_pairs.push(TriangleIndexPair::new(
+                        new_oppositve_index,
+                        index_pair.adjacent,
+                    ))
+                }
+
                 // get adjacent_triangles vom adjacent triangle, welche nicht am anliegenden edge sind und packe sie auf den stapel
                 // speicher die jeweiligen kanten mit dazu zu den adjacent triangles (oder nur die kanten)
-                // swap diagonal (diagnal edge + 2 ist der gegenüberliegende punkt... also eigentlich immer?)
+                // swap diagonal
+                // p + 1 % 3 hat nun das neue dreieck, was eingebunden werden muss
                 // repeat
             }
         }
 
         DelaunayTriangulation::fulfill_delaunay_constraint(
             triangle_set,
-            adjacent_triangle,
+            triangle_index_pair,
             adjacent_triangle_edges,
         );
 
