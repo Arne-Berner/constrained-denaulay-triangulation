@@ -9,7 +9,7 @@ pub struct PointBinGrid {
 }
 
 impl PointBinGrid {
-    pub fn new(cells_per_side: usize) -> PointBinGrid {
+    pub fn new(cells_per_side: usize) -> Self {
         let grid_size = Vec2::new(1., 1.);
         let cells = vec![vec![]; (cells_per_side * cells_per_side) as usize];
         let cell_size = grid_size / cells_per_side as f32;

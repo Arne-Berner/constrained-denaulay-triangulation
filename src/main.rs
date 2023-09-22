@@ -4,6 +4,7 @@ mod data_structures;
 mod math_utils;
 mod normalize;
 mod triangulation;
+
 fn main() {
     let mut input_points = Vec::new();
     input_points.push(Vec2::new(-0., 7.0));
@@ -15,5 +16,14 @@ fn main() {
     input_points.push(Vec2::new(1., -2.));
     input_points.push(Vec2::new(-6., -4.));
     input_points.push(Vec2::new(5., -4.));
-    let triangle_set = triangulation::triangulate(&mut input_points).err().unwrap();
+    let (mut triangle_set, bounds) = match triangulation::triangulate(&mut input_points){
+        Ok(result) => result,
+        Err(err) => panic!("triangulation failed!{:?}", err),
+    };
+    triangle_set = match triangle_set.tesselate(5.){
+        Ok(set) => set,
+        Err(_) => panic!("tesselation failed!"),
+    };
+    assert!(triangle_set.triangle_count() > 0);
+    println!("Bounds: {:?}", bounds);
 }

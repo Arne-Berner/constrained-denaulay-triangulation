@@ -1,4 +1,4 @@
-use crate::{math_utils::is_point_to_the_right_of_edge, triangulation};
+use crate::{math_utils::is_point_to_the_right_of_edge, triangulation::triangulate_point};
 
 use super::{vec2::Vec2, triangle_info::TriangleInfo, found_or_added::FoundOrAdded, triangle::Triangle, error::CustomError};
 
@@ -49,8 +49,8 @@ impl TriangleSet {
         Triangle::new(p0, p1, p2)
     }
 
-    pub fn get_triangle_info(&self, index: usize) -> &TriangleInfo {
-        &self.triangle_infos[index]
+    pub fn get_triangle_info(&self, index: usize) -> TriangleInfo {
+        self.triangle_infos[index]
     }
 
     pub fn get_point_from_index(&self, triangle_index: usize, vertex_index: usize) -> Vec2 {
@@ -81,7 +81,7 @@ impl TriangleSet {
                 // if it is outside of the triangle
                 if is_point_to_the_right_of_edge(
                     self.get_point_from_index(triangle_index, vertex_index),
-                    self.get_point_from_index(triangle_index, vertex_index + 1 % 3),
+                    self.get_point_from_index(triangle_index, (vertex_index + 1) % 3),
                     point,
                 ) {
                     // The point is in the exterior of the triangle (vertices are sorted CCW, the right side is always the exterior from the perspective of the A->B edge)
@@ -147,11 +147,10 @@ impl TriangleSet {
         self.triangle_infos[triangle_index].vertex_indices[vertex_position] = new_vertex;
     }
 
-    pub fn tesselate(&mut self, maximum_triangle_area: f32) -> Result<(), CustomError> {
+    pub fn tesselate(mut self, maximum_triangle_area: f32) -> Result<Self, CustomError> {
         // skip Supertriangle
         let mut triangle_index = 2;
         while triangle_index < self.triangle_count() {
-            triangle_index += 1;
             // Skips  triangles sharing vertices with the Supertriangle
             let mut is_supertriangle = false;
             let triangle_info = self.get_triangle_info(triangle_index);
@@ -175,34 +174,30 @@ impl TriangleSet {
             let triangle_area = crate::math_utils::calculate_triangle_area(&triangle);
 
             if triangle_area > maximum_triangle_area {
-                if triangulation::triangulate_point(
-                    self,
-                    triangle.p(0) + (triangle.p(1) - triangle.p(0)) * 0.5,
-                )
-                .is_err()
-                {
-                    return Err(CustomError::TesselationFailed);
-                }
-                if triangulation::triangulate_point(
-                    self,
-                    triangle.p(1) + (triangle.p(2) - triangle.p(1)) * 0.5,
-                )
-                .is_err()
-                {
-                    return Err(CustomError::TesselationFailed);
-                }
-                if triangulation::triangulate_point(
-                    self,
-                    triangle.p(2) + (triangle.p(0) - triangle.p(2)) * 0.5,
-                )
-                .is_err()
-                {
-                    return Err(CustomError::TesselationFailed);
-                }
-
-                triangle_index = 2; // The tesselation restarts
+            if let Err(_) = triangulate_point(
+                &mut self,
+                triangle.p(0) + (triangle.p(1) - triangle.p(0)) * 0.5,
+            ) {
+                return Err(CustomError::TesselationFailed);
             }
+
+            if let Err(_) = triangulate_point(
+                &mut self,
+                triangle.p(1) + (triangle.p(2) - triangle.p(1)) * 0.5,
+            ) {
+                return Err(CustomError::TesselationFailed);
+            }
+
+            if let Err(_) = triangulate_point(
+                &mut self,
+                triangle.p(2) + (triangle.p(0) - triangle.p(2)) * 0.5,
+            ) {
+                return Err(CustomError::TesselationFailed);
+            }
+            triangle_index = 2; // The tesselation restarts
+            }
+            triangle_index += 1;
         }
-        return Ok(());
+        return Ok(self);
     }
 }

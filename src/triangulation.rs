@@ -1,5 +1,5 @@
 //TODO ADD TESTS FOR EVERY FUNCTION (in docs)
-use crate::{math_utils::is_point_inside_circumcircle, data_structures::{vec2::Vec2, triangle_set::TriangleSet, error::CustomError, point_bin_grid::PointBinGrid, triangle::Triangle, found_or_added::FoundOrAdded, triangle_info::TriangleInfo}, normalize::{self, normalize_points}};
+use crate::{math_utils::is_point_inside_circumcircle, data_structures::{vec2::Vec2, triangle_set::TriangleSet, error::CustomError, point_bin_grid::PointBinGrid, triangle::Triangle, found_or_added::FoundOrAdded, triangle_info::TriangleInfo}, normalize::{self, normalize_points, Bounds}};
 
 struct TriangleIndexPair {
     pub adjacent: usize,
@@ -11,10 +11,9 @@ impl TriangleIndexPair {
     }
 }
 
-pub fn triangulate(input_points: &mut Vec<Vec2>) -> Result<TriangleSet, CustomError> {
+pub fn triangulate(input_points: &mut Vec<Vec2>) -> Result<(TriangleSet, Bounds), CustomError> {
     // Initialize containers
     let mut triangle_set = TriangleSet::new(input_points.len() - 2);
-    let mut triangles_to_remove = Vec::<usize>::new();
 
     let (normalized_points, bounds) = normalize::normalize_points(input_points, None);
 
@@ -27,7 +26,7 @@ pub fn triangulate(input_points: &mut Vec<Vec2>) -> Result<TriangleSet, CustomEr
         (input_points.len() as f32).powf(1. / 4.).round() as usize,
     );
 
-    for point in normalized_points {
+    for point in &normalized_points {
         grid.add_point(*point);
     }
     println!("grid with points: {:?}", grid);
@@ -52,7 +51,7 @@ pub fn triangulate(input_points: &mut Vec<Vec2>) -> Result<TriangleSet, CustomEr
         }
     }
 
-    return Ok(triangle_set);
+    return Ok((triangle_set, bounds));
 }
 
 // pub fn create_holes(
@@ -60,6 +59,7 @@ pub fn triangulate(input_points: &mut Vec<Vec2>) -> Result<TriangleSet, CustomEr
 //     holes: Option<&Vec<Vec<Vec2>>>,
 //     bounds: normalize::Bounds,
 // ) -> Result<(), CustomError>{
+//    let mut triangles_to_remove = Vec::<usize>::new();
 //     println!("before creating holes");
 //     // 8: Holes creation (constrained edges)
 //     if let Some(holes) = holes {
@@ -138,7 +138,7 @@ pub fn triangulate_point(
 
         // 5. Insert new point in triangulation and create 2 new triangles off of it
         // all the triangles take inserted point as there vertex 0, so that adjacent is 1
-        let mut first_triangle = TriangleInfo::new([
+        let first_triangle = TriangleInfo::new([
             inserted_point_index,
             containing_triangle.vertex_indices[0],
             containing_triangle.vertex_indices[1],
@@ -252,20 +252,22 @@ fn swap_edges(
     let adjacent_info = triangle_set.get_triangle_info(index_pair.adjacent);
     let current_info = triangle_set.get_triangle_info(index_pair.current);
     let shared_vertex = current_info.vertex_indices[1];
-    let adj_shared_vertex = 0;
-    for idx in 0..adjacent_info.vertex_indices.len() {
+    let mut adj_shared_vertex_index = 0;
+    for idx in 0..3 {
         if shared_vertex == adjacent_info.vertex_indices[idx] {
-            adj_shared_vertex == idx;
+            adj_shared_vertex_index = idx;
             break;
+        } else {
+            panic!("the triangles don't share an index!")
         }
     }
-    let first_new_adjacent = adjacent_info.adjacent_triangle_indices[adj_shared_vertex];
-    let second_new_adjacent = adjacent_info.adjacent_triangle_indices[(adj_shared_vertex + 1) % 3];
+    let first_new_adjacent = adjacent_info.adjacent_triangle_indices[adj_shared_vertex_index];
+    let second_new_adjacent = adjacent_info.adjacent_triangle_indices[(adj_shared_vertex_index + 1) % 3];
 
     if let Some(current_triangle_index) =
-        adjacent_info.adjacent_triangle_indices[(adj_shared_vertex + 2) % 3]
+        adjacent_info.adjacent_triangle_indices[(adj_shared_vertex_index + 2) % 3]
     {
-        let opposite_vertex = adjacent_info.vertex_indices[(adj_shared_vertex + 1) % 3];
+        let opposite_vertex = adjacent_info.vertex_indices[(adj_shared_vertex_index + 1) % 3];
         let new_adjacent = TriangleInfo::new([
             current_info.vertex_indices[0],
             opposite_vertex,

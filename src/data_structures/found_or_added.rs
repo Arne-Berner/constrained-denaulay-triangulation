@@ -11,7 +11,6 @@ impl FoundOrAdded{
         match self {
             FoundOrAdded::Found(idx) => idx,
             FoundOrAdded::Added(idx) => idx,
-            _ => 0
         }
     }
 }

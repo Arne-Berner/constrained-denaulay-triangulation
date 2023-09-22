@@ -1,5 +1,7 @@
 use crate::data_structures::vec2::Vec2;
 
+// TODO add tests that check bounds
+#[derive(Debug)]
 pub struct Bounds {
     min: Vec2,
     max: Vec2,
