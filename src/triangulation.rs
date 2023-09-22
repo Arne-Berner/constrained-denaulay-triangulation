@@ -1,15 +1,5 @@
-use bevy::{prelude::Gizmos, prelude::Vec2, utils::petgraph::adj};
 //TODO ADD TESTS FOR EVERY FUNCTION (in docs)
-
-use crate::delaunay_triangulation::{
-    data_structure::{Triangle, TriangleSet},
-    normalize::{self, normalize_points}, point_bin_grid::PointBinGrid,
-};
-
-use super::{
-    data_structure::{CustomError, FoundOrAdded, TriangleInfo},
-    math_utils::is_point_inside_circumcircle,
-};
+use crate::{math_utils::is_point_inside_circumcircle, data_structures::{vec2::Vec2, triangle_set::TriangleSet, error::CustomError, point_bin_grid::PointBinGrid, triangle::Triangle}, normalize::{self, normalize_points}};
 
 struct TriangleIndexPair {
     pub adjacent: usize,
@@ -21,14 +11,12 @@ impl TriangleIndexPair {
     }
 }
 
-pub fn triangulate(
-    input_points: Vec<Vec2>,
-)-> Result<TriangleSet, CustomError> {
+pub fn triangulate(input_points: Vec<Vec2>) -> Result<TriangleSet, CustomError> {
     // Initialize containers
     let mut triangle_set = TriangleSet::new(input_points.len() - 2);
     let mut triangles_to_remove = Vec::<usize>::new();
 
-    let (normalized_points, bounds) = normalize::normalize_points(input_points);
+    let (normalized_points, bounds) = normalize::normalize_points(input_points, None);
 
     println!("normalized points: {:?}", &normalized_points);
 
@@ -61,49 +49,42 @@ pub fn triangulate(
             if triangulate_point(&mut triangle_set, *point).is_err() {
                 return Err(CustomError::TriangulationFailed);
             }
-
         }
     }
+
     return Ok(triangle_set);
 }
 
-pub fn create_holes(triangle_set: &mut TriangleSet, holes: Option<&Vec<Vec<Vec2>>>){
+pub fn create_holes(
+    triangle_set: &mut TriangleSet,
+    holes: Option<&Vec<Vec<Vec2>>>,
+    bounds: normalize::Bounds,
+) -> Result<(), CustomError>{
     println!("before creating holes");
     // 8: Holes creation (constrained edges)
-    if let Some(hole) = holes {
+    if let Some(holes) = holes {
         // Adds the points of all the polygons to the triangulation
-        let mut constrained_edge_indices = Vec::new();
+        let mut hole_indices = Vec::new();
 
-        for constrained_edge in hole {
+        for hole in holes {
             // 5.1: Normalize
-            let (normlized_hole, bounds) = normalize_points(
-                *constrained_edge,
-            );
+            let (normalized_hole, bounds) = normalize_points(*hole, Some(bounds));
 
-            let mut polygon_edge_indices = Vec::new();
+            let mut polygon_indices = Vec::new();
 
-            for i in 0..normalized_constrained_edges.len() {
+            for point_to_insert in normalized_hole {
                 // 5.2: Add the points to the Triangle set
-                if normalized_constrained_edges[i]
-                    == normalized_constrained_edges[(i + 1) % normalized_constrained_edges.len()]
-                {
-                    println!("The list of constrained edges contains a zero-length edge (2 consecutive coinciding points, indices {} and {}). It will be ignored.", i, (i + 1) % normalized_constrained_edges.len());
-                    continue;
+                let point_index:usize;
+                match triangulate_point(&mut triangle_set, point_to_insert) {
+                    Ok(foundoradded) => polygon_indices.push(foundoradded.value()),
+                    Err(error) => {return Err(error);}
                 }
-
-                let added_point_index = triangulate_point(
-                    &mut adjacent_triangles_with_edge,
-                    &mut triangle_set,
-                    &mut self.adjacent_triangle_edges,
-                    normalized_constrained_edges[i],
-                );
-                polygon_edge_indices.push(added_point_index);
             }
 
-            constrained_edge_indices.push(polygon_edge_indices);
+            hole_indices.push(polygon_indices);
         }
 
-        for edges in &constrained_edge_indices {
+        for edges in &hole_indices {
             // todo no unwrap please
             // 5.3: create the constrained edges
             for j in 0..edges.len() {
@@ -116,7 +97,7 @@ pub fn create_holes(triangle_set: &mut TriangleSet, holes: Option<&Vec<Vec<Vec2>
         }
 
         // 5.4: Identify all the triangles in the polygon
-        for constrained_edge in &constrained_edge_indices {
+        for constrained_edge in &hole_indices {
             let mut unwrapped_edges = Vec::<usize>::new();
             for unwrapped_edge in constrained_edge {
                 unwrapped_edges.push(unwrapped_edge.unwrap())
@@ -130,19 +111,22 @@ pub fn create_holes(triangle_set: &mut TriangleSet, holes: Option<&Vec<Vec<Vec2>
     triangles_to_remove.sort();
 
     DelaunayTriangulation::denormalize_points(&mut triangle_set.points, &main_point_cloud_bounds);
+
+    return Ok(());
 }
 
-fn triangulate_point(
+pub fn triangulate_point(
     triangle_set: &mut TriangleSet,
     point_to_insert: Vec2,
-) -> Result<usize, CustomError> {
+) -> Result<FoundOrAdded, CustomError> {
     // Note: Adjacent triangle, opposite to the inserted point, is always at index 1
     // Note 2: Adjacent triangles are stored CCW automatically, their index matches the index of the first vertex in every edge, and it is known that vertices are stored CCW
 
     // 4.1: Check point existence
-    let (inserted_point_index, found) = triangle_set.add_point(point_to_insert);
-    if found == FoundOrAdded::Found {
-        return Ok(inserted_point_index);
+    let inserted_point_index;
+    match triangle_set.add_point(point_to_insert) {
+        FoundOrAdded::Found(idx) => return Ok(FoundOrAdded::Found(idx)),
+        FoundOrAdded::Added(idx) => inserted_point_index = idx,
     }
 
     // 4.2: Search containing triangle
@@ -234,7 +218,7 @@ fn triangulate_point(
             ) {
                 // delaunay constraint not fullfilled
                 if let Ok((first_new_adjacent, second_new_adjacent)) =
-                // 7.2 
+                    // 7.2
                     swap_edges(&index_pair, triangle_set)
                 {
                     // 7.3 push new adjacents on stack
@@ -255,7 +239,7 @@ fn triangulate_point(
                 }
             }
         }
-        return Ok(inserted_point_index);
+        return Ok(FoundOrAdded::Added(inserted_point_index));
     } else {
         return Err(CustomError::PointOutOfBounds);
     }

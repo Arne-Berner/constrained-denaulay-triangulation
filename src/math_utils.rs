@@ -1,7 +1,4 @@
-use bevy::prelude::Vec2;
-
-use super::data_structure::Triangle;
-
+use crate::data_structures::{vec2::Vec2, triangle::Triangle};
 /// Calculates the determinant of a 3 columns x 3 rows matrix.
 ///
 /// # Arguments
@@ -257,6 +254,6 @@ pub fn is_quadrilateral_convex(a: Vec2, b: Vec2, c: Vec2, d: Vec2) -> bool {
 /// # Returns
 ///
 /// The area of the triangle.
-pub fn calculate_triangle_area(p0: Vec2, p1: Vec2, p2: Vec2) -> f32 {
-    (p1 - p0).perp_dot(p2 - p0) * 0.5
+pub fn calculate_triangle_area(triangle: Triangle) -> f32 {
+    (triangle.p(1) - triangle.p(0)).cross_product(triangle.p(2) - triangle.p(0)) * 0.5
 }

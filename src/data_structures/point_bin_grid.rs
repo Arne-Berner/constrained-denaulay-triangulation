@@ -1,4 +1,4 @@
-use bevy::prelude::{Color, Gizmos, Vec2};
+use super::vec2::Vec2;
 
 #[derive(Debug)]
 pub struct PointBinGrid {

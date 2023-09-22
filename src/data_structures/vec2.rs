@@ -1,0 +1,82 @@
+#[derive(PartialEq, Debug, Default, Clone, Copy)]
+pub struct Vec2{
+    pub x: f32,
+    pub y: f32,
+}
+
+impl Vec2{
+    #[inline]
+    pub fn new(x:f32, y:f32)->Self{
+        Vec2{x,y}
+    }
+
+    #[inline]
+    pub fn cross_product(self, rhs: Self) -> f32 {
+        (self.x * rhs.y) - (self.y * rhs.x)
+    }
+
+}
+
+impl std::ops::Div<f32> for Vec2 {
+    type Output = Self;
+    #[inline]
+    fn div(self, rhs: f32) -> Self {
+        Self {
+            x: self.x.div(rhs),
+            y: self.y.div(rhs),
+        }
+    }
+}
+
+impl std::ops::Div<Vec2> for Vec2 {
+    type Output = Self;
+    #[inline]
+    fn div(self, rhs: Vec2) -> Self {
+        Self {
+            x: self.x.div(rhs.x),
+            y: self.y.div(rhs.y),
+        }
+    }
+}
+impl std::ops::Mul<f32> for Vec2 {
+    type Output = Self;
+    #[inline]
+    fn mul(self, rhs: f32) -> Self {
+        Self {
+            x: self.x.mul(rhs),
+            y: self.y.mul(rhs),
+        }
+    }
+}
+impl std::ops::Mul<Vec2> for Vec2 {
+    type Output = Self;
+    #[inline]
+    fn mul(self, rhs: Self) -> Self {
+        Self {
+            x: self.x.mul(rhs.x),
+            y: self.y.mul(rhs.y),
+        }
+    }
+}
+
+impl std::ops::Add<Vec2> for Vec2 {
+    type Output = Self;
+    #[inline]
+    fn add(self, rhs: Self) -> Self {
+        Self {
+            x: self.x.add(rhs.x),
+            y: self.y.add(rhs.y),
+        }
+    }
+}
+
+impl std::ops::Sub<Vec2> for Vec2 {
+    type Output = Self;
+    #[inline]
+    fn sub(self, rhs: Self) -> Self {
+        Self {
+            x: self.x.sub(rhs.x),
+            y: self.y.sub(rhs.y),
+        }
+    }
+}

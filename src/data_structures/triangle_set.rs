@@ -1,23 +1,7 @@
-use bevy::prelude::Vec2;
+use crate::{math_utils::is_point_to_the_right_of_edge, triangulation};
 
-use super::{math_utils::is_point_to_the_right_of_edge, triangulation};
+use super::{vec2::Vec2, triangle_info::TriangleInfo, found_or_added::FoundOrAdded, triangle::Triangle, error::CustomError};
 
-pub enum CustomError {
-    PointOutOfBounds,
-    TriangulationFailed,
-    CouldntFindExistingTriangle,
-    TesselationFailed,
-}
-pub struct TriangleIndexPair {
-    current: usize,
-    adjacent: usize,
-}
-
-#[derive(PartialEq)]
-pub enum FoundOrAdded {
-    Found(usize),
-    Added(usize),
-}
 pub struct TriangleSet {
     points: Vec<Vec2>,
     triangle_infos: Vec<TriangleInfo>,
@@ -43,9 +27,9 @@ impl TriangleSet {
     }
 
     pub fn add_triangle(&self, triangle: &Triangle) {
-        let (p0, _) = self.add_point(triangle.p(0));
-        let (p1, _) = self.add_point(triangle.p(1));
-        let (p2, _) = self.add_point(triangle.p(2));
+        let p0 = self.add_point(triangle.p(0)).value();
+        let p1 = self.add_point(triangle.p(1)).value();
+        let p2 = self.add_point(triangle.p(2)).value();
         self.triangle_infos.push(TriangleInfo::new([p0, p1, p2]));
     }
 
@@ -85,7 +69,7 @@ impl TriangleSet {
         &self,
         point: Vec2,
         start_triangle: usize,
-    ) -> Result<usize, PointOutOfBounds> {
+    ) -> Result<usize, CustomError> {
         let mut is_triangle_found = false;
         let mut triangle_index = start_triangle;
         let mut checked_triangles = 0;
@@ -116,7 +100,7 @@ impl TriangleSet {
 
         if checked_triangles >= self.triangle_count() && self.triangle_count() > 1 {
             println!("Unable to find a triangle that contains the point ({:?}), starting at triangle {}. Are you generating very small triangles?", point, start_triangle);
-            return Err(PointOutOfBounds);
+            return Err(CustomError::PointOutOfBounds);
         }
 
         Ok(triangle_index)
@@ -188,7 +172,7 @@ impl TriangleSet {
             }
 
             let triangle = self.get_triangle(triangle_index);
-            let triangle_area = super::math_utils::calculate_triangle_area(triangle);
+            let triangle_area = crate::math_utils::calculate_triangle_area(triangle);
 
             if triangle_area > maximum_triangle_area {
                 if triangulation::triangulate_point(
@@ -222,55 +206,3 @@ impl TriangleSet {
         return Ok(());
     }
 }
-
-pub struct Triangle {
-    vertices: [Vec2; 3],
-}
-
-impl Triangle {
-    pub fn new(vertex0: Vec2, vertex1: Vec2, vertex2: Vec2) -> Self {
-        Triangle {
-            vertices: [vertex0, vertex1, vertex2],
-        }
-    }
-
-    pub fn p(&self, index: usize) -> Vec2 {
-        self.vertices[index]
-    }
-}
-// rename to something that makes more sense
-pub struct TriangleInfo {
-    pub vertex_indices: [usize; 3],
-    pub adjacent_triangle_indices: [Option<usize>; 3],
-}
-impl TriangleInfo {
-    pub fn new(index_vertices: [usize; 3]) -> Self {
-        TriangleInfo {
-            vertex_indices: index_vertices,
-            adjacent_triangle_indices: [None, None, None],
-        }
-    }
-
-    pub fn with_adjacent(
-        mut self,
-        adjacent0: Option<usize>,
-        adjacent1: Option<usize>,
-        adjacent2: Option<usize>,
-    ) -> TriangleInfo {
-        self.adjacent_triangle_indices[0] = adjacent0;
-        self.adjacent_triangle_indices[1] = adjacent1;
-        self.adjacent_triangle_indices[2] = adjacent2;
-        self
-    }
-}
-
-// struct Edge {
-//     vertex_a: Vec2,
-//     vertex_b: Vec2,
-// }
-
-// impl Edge {
-//     pub fn new(vertex_a: Vec2, vertex_b: Vec2) -> Self {
-//         Edge { vertex_a, vertex_b }
-//     }
-// }
