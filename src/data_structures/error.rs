@@ -1,7 +1,7 @@
 #[derive(Debug)]
 pub enum CustomError {
     PointNotInTriangle,
-    TriangulationFailed,
-    CouldntFindExistingTriangle,
+    SwappingFailed,
+    TrianglesDontShareIndex,
     TesselationFailed,
 }

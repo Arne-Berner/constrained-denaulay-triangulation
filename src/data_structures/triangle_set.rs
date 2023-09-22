@@ -103,9 +103,9 @@ impl TriangleSet {
 
         if checked_triangles >= self.triangle_count() && self.triangle_count() > 1 {
             // NOT CCW?!
-            println!("\n\n triangle_info:{:#?}\n\npoint1:{:#?}, point2:{:#?}, point3:{:#?}, point_to_insert{:#?}", self.triangle_infos[triangle_index], self.get_point_from_index(triangle_index, 0), self.get_point_from_index(triangle_index, 1), self.get_point_from_index(triangle_index, 2), point);
+            //println!("\n\n triangle_info:{:#?}\n\npoint1:{:#?}, point2:{:#?}, point3:{:#?}, point_to_insert{:#?}", self.triangle_infos[triangle_index], self.get_point_from_index(triangle_index, 0), self.get_point_from_index(triangle_index, 1), self.get_point_from_index(triangle_index, 2), point);
             //println!("\n\n triangle_info:{:#?}\n\nindex:{:?}\n\npoints:{:?}\n\nchecked_triangles{:?}", self.triangle_infos[triangle_index], triangle_index, self.points, checked_triangles);
-            println!("Unable to find a triangle that contains the point ({:?}), starting at triangle {}. Are you generating very small triangles?", point, start_triangle);
+            //println!("Unable to find a triangle that contains the point ({:?}), starting at triangle {}. Are you generating very small triangles?", point, start_triangle);
             return Err(CustomError::PointNotInTriangle);
         }
 
@@ -146,8 +146,8 @@ impl TriangleSet {
 
     pub fn replace_vertex_with_vertex(
         &mut self,
-        vertex_position: usize,
         triangle_index: usize,
+        vertex_position: usize,
         new_vertex: usize,
     ) {
         self.triangle_infos[triangle_index].vertex_indices[vertex_position] = new_vertex;

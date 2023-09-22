@@ -70,7 +70,7 @@ pub fn triangulate(
         }
     }
     if let Some(maximum_triangle_area) = maximum_triangle_area {
-        tesselate(&mut triangle_set, maximum_triangle_area);
+        tesselate(&mut triangle_set, maximum_triangle_area)?;
     }
     if let Some(holes) = holes {
         // holes fn
@@ -321,7 +321,7 @@ pub fn triangulate_point(
                         ))
                     }
                 } else {
-                    return Err(CustomError::TriangulationFailed);
+                    return Err(CustomError::SwappingFailed);
                 }
             }
         }
@@ -346,43 +346,46 @@ fn swap_edges(
         }
     }
     if adj_shared_vertex_index > 2 {
-        panic!("the triangles don't share an index!")
+        return Err(CustomError::TrianglesDontShareIndex);
     }
-    println!("\nadjacent_info:{:?}\n", adjacent_info);
-    println!("\ncurrent_info:{:?}\n", current_info);
-    println!(
-        "\n\ntriangle count:{:?}\n\n{:?}\n\n",
-        triangle_set.triangle_count(),
-        triangle_set.triangle_infos
-    );
     let first_new_adjacent = adjacent_info.adjacent_triangle_indices[adj_shared_vertex_index];
     let second_new_adjacent =
         adjacent_info.adjacent_triangle_indices[(adj_shared_vertex_index + 1) % 3];
 
-    if let Some(current_triangle_index) =
-        adjacent_info.adjacent_triangle_indices[(adj_shared_vertex_index + 2) % 3]
-    {
-        let opposite_vertex = adjacent_info.vertex_indices[(adj_shared_vertex_index + 1) % 3];
-        let new_adjacent = TriangleInfo::new([
-            current_info.vertex_indices[0],
-            opposite_vertex,
-            current_info.vertex_indices[2],
-        ])
-        .with_adjacent(
-            Some(current_triangle_index),
-            second_new_adjacent,
-            current_info.adjacent_triangle_indices[2],
-        );
-        triangle_set.replace_triangle(index_pair.adjacent, &new_adjacent);
-        triangle_set.replace_vertex_with_vertex(2, current_triangle_index, opposite_vertex);
-        let new_adjacent_indices = [
-            current_info.adjacent_triangle_indices[0],
-            first_new_adjacent,
+    let opposite_vertex = adjacent_info.vertex_indices[(adj_shared_vertex_index + 1) % 3];
+    let new_adjacent = TriangleInfo::new([
+        current_info.vertex_indices[0],
+        opposite_vertex,
+        current_info.vertex_indices[2],
+    ])
+    .with_adjacent(
+        Some(index_pair.current),
+        second_new_adjacent,
+        current_info.adjacent_triangle_indices[2],
+    );
+    triangle_set.replace_triangle(index_pair.adjacent, &new_adjacent);
+    triangle_set.replace_vertex_with_vertex(index_pair.current, 2, opposite_vertex);
+    let new_adjacent_indices = [
+        current_info.adjacent_triangle_indices[0],
+        first_new_adjacent,
+        Some(index_pair.adjacent),
+    ];
+    triangle_set.replace_adjacent_vertices(index_pair.current, new_adjacent_indices);
+
+    // change the adjacent triangles of the changed adjacent triangles
+    if let Some(needs_replacement_index) = current_info.adjacent_triangle_indices[2] {
+        triangle_set.replace_adjacent(
+            needs_replacement_index,
+            Some(index_pair.current),
             Some(index_pair.adjacent),
-        ];
-        triangle_set.replace_adjacent_vertices(current_triangle_index, new_adjacent_indices);
-        Ok((first_new_adjacent, second_new_adjacent))
-    } else {
-        return Err(CustomError::CouldntFindExistingTriangle);
+        );
     }
+    if let Some(needs_replacement_index) = first_new_adjacent {
+        triangle_set.replace_adjacent(
+            needs_replacement_index,
+            Some(index_pair.adjacent),
+            Some(index_pair.current),
+        );
+    }
+    Ok((first_new_adjacent, second_new_adjacent))
 }
