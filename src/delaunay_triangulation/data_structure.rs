@@ -1,9 +1,14 @@
 use bevy::prelude::Vec2;
 
-use crate::math_utils;
 
 use super::math_utils::is_point_to_the_right_of_edge;
 
+pub enum CustomError{
+    PointOutOfBounds,
+    TriangulationFailed,
+    CouldntFindExistingTriangle,
+
+}
 pub struct TriangleIndexPair {
     current: usize,
     adjacent: usize,
@@ -81,7 +86,7 @@ impl TriangleSet {
         &self,
         point: Vec2,
         start_triangle: usize,
-    ) -> Option<usize> {
+    ) -> Result<usize, PointOutOfBounds> {
         let mut is_triangle_found = false;
         let mut triangle_index = start_triangle;
         let mut checked_triangles = 0;
@@ -112,10 +117,10 @@ impl TriangleSet {
 
         if checked_triangles >= self.triangle_count() && self.triangle_count() > 1 {
             println!("Unable to find a triangle that contains the point ({:?}), starting at triangle {}. Are you generating very small triangles?", point, start_triangle);
-            return None;
+            return Err(PointOutOfBounds);
         }
 
-        Some(triangle_index)
+        Ok(triangle_index)
     }
 
     pub fn replace_adjacent(
