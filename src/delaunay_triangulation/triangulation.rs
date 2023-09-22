@@ -3,7 +3,7 @@ use bevy::{prelude::Gizmos, prelude::Vec2, utils::petgraph::adj};
 
 use crate::delaunay_triangulation::{
     data_structure::{Triangle, TriangleSet},
-    normalize,
+    normalize::{self, normalize_points}, point_bin_grid::PointBinGrid,
 };
 
 use super::{
@@ -22,12 +22,8 @@ impl TriangleIndexPair {
 }
 
 pub fn triangulate(
-    // might need to be a ref, for it to work with other systems
     input_points: Vec<Vec2>,
-    maximum_area_tesselation: f32,
-    constrained_edges: Option<&Vec<Vec<Vec2>>>,
-    mut gizmos: Gizmos,
-) {
+)-> Result<TriangleSet, CustomError> {
     // Initialize containers
     let mut triangle_set = TriangleSet::new(input_points.len() - 2);
     let mut triangles_to_remove = Vec::<usize>::new();
@@ -54,7 +50,7 @@ pub fn triangulate(
         Vec2::new(100.0, -100.0),
         Vec2::new(0.0, 100.0),
     );
-    triangle_set.add_triangle(supertriangle);
+    triangle_set.add_triangle(&supertriangle);
 
     // 4: (loop over each point) For each point P in the list of sorted points, do steps 5-7
     // Points are added one at a time, and points that are close together are inserted together because they are sorted in the grid,
@@ -62,31 +58,26 @@ pub fn triangulate(
     for cell in grid.cells().iter() {
         for point in cell {
             // All the points in the bin are added together, one by one
-            triangulate_point(&mut triangle_set, *point);
+            if triangulate_point(&mut triangle_set, *point).is_err() {
+                return Err(CustomError::TriangulationFailed);
+            }
+
         }
     }
+    return Ok(triangle_set);
+}
 
-    if maximum_area_tesselation > 0.0 {
-        DelaunayTriangulation::tesselate(
-            &mut adjacent_triangles_with_edge,
-            &mut triangle_set,
-            &mut adjacent_triangle_edges,
-            maximum_area_tesselation,
-        );
-    }
-
+pub fn create_holes(triangle_set: &mut TriangleSet, holes: Option<&Vec<Vec<Vec2>>>){
     println!("before creating holes");
-    // 5: Holes creation (constrained edges)
-    if let Some(constrained_edges) = constrained_edges {
+    // 8: Holes creation (constrained edges)
+    if let Some(hole) = holes {
         // Adds the points of all the polygons to the triangulation
         let mut constrained_edge_indices = Vec::new();
 
-        for constrained_edge in constrained_edges {
+        for constrained_edge in hole {
             // 5.1: Normalize
-            let mut normalized_constrained_edges = constrained_edge.clone();
-            DelaunayTriangulation::normalize_points(
-                &mut normalized_constrained_edges,
-                &main_point_cloud_bounds,
+            let (normlized_hole, bounds) = normalize_points(
+                *constrained_edge,
             );
 
             let mut polygon_edge_indices = Vec::new();
@@ -214,7 +205,6 @@ fn triangulate_point(
 
         // TODO there might be a good capacity to choose here
         let index_pairs = Vec::<TriangleIndexPair>::new();
-        // REWORK THIS
         // 6: Add new triangles to a stack
         if let Some(adjacent_index) = containing_triangle.adjacent_triangle_indices[1] {
             index_pairs.push(TriangleIndexPair {
@@ -244,9 +234,10 @@ fn triangulate_point(
             ) {
                 // delaunay constraint not fullfilled
                 if let Ok((first_new_adjacent, second_new_adjacent)) =
+                // 7.2 
                     swap_edges(&index_pair, triangle_set)
                 {
-                    //set new adjacents
+                    // 7.3 push new adjacents on stack
                     if let Some(new_oppositve_index) = first_new_adjacent {
                         index_pairs.push(TriangleIndexPair::new(
                             new_oppositve_index,
