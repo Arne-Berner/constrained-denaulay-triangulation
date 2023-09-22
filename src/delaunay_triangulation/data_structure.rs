@@ -1,13 +1,12 @@
 use bevy::prelude::Vec2;
 
+use super::{math_utils::is_point_to_the_right_of_edge, triangulation};
 
-use super::math_utils::is_point_to_the_right_of_edge;
-
-pub enum CustomError{
+pub enum CustomError {
     PointOutOfBounds,
     TriangulationFailed,
     CouldntFindExistingTriangle,
-
+    TesselationFailed,
 }
 pub struct TriangleIndexPair {
     current: usize,
@@ -16,8 +15,8 @@ pub struct TriangleIndexPair {
 
 #[derive(PartialEq)]
 pub enum FoundOrAdded {
-    Found,
-    Added,
+    Found(usize),
+    Added(usize),
 }
 pub struct TriangleSet {
     points: Vec<Vec2>,
@@ -33,14 +32,14 @@ impl TriangleSet {
         }
     }
 
-    pub fn add_point(&mut self, point_to_add: Vec2) -> (usize, FoundOrAdded) {
+    pub fn add_point(&mut self, point_to_add: Vec2) -> FoundOrAdded {
         for (idx, point) in self.points.iter().enumerate() {
             if *point == point_to_add {
-                return (idx, FoundOrAdded::Found);
+                return FoundOrAdded::Found(idx);
             }
         }
         self.points.push(point_to_add);
-        (self.points.len() - 1, FoundOrAdded::Added)
+        FoundOrAdded::Added(self.points.len() - 1)
     }
 
     pub fn add_triangle(&self, triangle: &Triangle) {
@@ -150,7 +149,7 @@ impl TriangleSet {
     pub fn replace_adjacent_vertices(
         &mut self,
         triangle_index: usize,
-        new_adjacent_indices: [Option<usize>;3],
+        new_adjacent_indices: [Option<usize>; 3],
     ) {
         self.triangle_infos[triangle_index].adjacent_triangle_indices = new_adjacent_indices;
     }
@@ -164,21 +163,64 @@ impl TriangleSet {
         self.triangle_infos[triangle_index].vertex_indices[vertex_position] = new_vertex;
     }
 
-    // pub fn get_adjacent_triangles_except(&self, exception_index: usize, triangle_index: usize)-> Vec<Option<usize>> {
-    //     let mut result = Vec::new();
-    //     for i in 0..3 {
-    //         if let Some(adjacent_index) =
-    //             self.triangle_infos[triangle_index].adjacent_triangle_indices[i]
-    //         {
-    //             if !(adjacent_index == exception_index) {
-    //                 result.push(Some(adjacent_index));
-    //             }
-    //         } else {
-    //             result.push(None)
-    //         }
-    //     }
-    //     result
-    // }
+    pub fn tesselate(&mut self, maximum_triangle_area: f32) -> Result<(), CustomError> {
+        // skip Supertriangle
+        let mut triangle_index = 2;
+        while triangle_index < self.triangle_count() {
+            triangle_index += 1;
+            // Skips  triangles sharing vertices with the Supertriangle
+            let mut is_supertriangle = false;
+            let triangle_info = self.get_triangle_info(triangle_index);
+
+            for j in 0..3 {
+                if triangle_info.vertex_indices[j] == 0
+                    || triangle_info.vertex_indices[j] == 1
+                    || triangle_info.vertex_indices[j] == 2
+                {
+                    // 0, 1 and 2 are vertices of the supertriangle
+                    is_supertriangle = true;
+                    break;
+                }
+            }
+
+            if is_supertriangle {
+                continue;
+            }
+
+            let triangle = self.get_triangle(triangle_index);
+            let triangle_area = super::math_utils::calculate_triangle_area(triangle);
+
+            if triangle_area > maximum_triangle_area {
+                if triangulation::triangulate_point(
+                    self,
+                    triangle.p(0) + (triangle.p(1) - triangle.p(0)) * 0.5,
+                )
+                .is_err()
+                {
+                    return Err(CustomError::TesselationFailed);
+                }
+                if triangulation::triangulate_point(
+                    self,
+                    triangle.p(1) + (triangle.p(2) - triangle.p(1)) * 0.5,
+                )
+                .is_err()
+                {
+                    return Err(CustomError::TesselationFailed);
+                }
+                if triangulation::triangulate_point(
+                    self,
+                    triangle.p(2) + (triangle.p(0) - triangle.p(2)) * 0.5,
+                )
+                .is_err()
+                {
+                    return Err(CustomError::TesselationFailed);
+                }
+
+                triangle_index = 2; // The tesselation restarts
+            }
+        }
+        return Ok(());
+    }
 }
 
 pub struct Triangle {
