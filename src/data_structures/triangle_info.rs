@@ -1,4 +1,4 @@
-#[derive(Clone,Copy)]
+#[derive(Clone,Copy, Debug)]
 pub struct TriangleInfo {
     pub vertex_indices: [usize; 3],
     pub adjacent_triangle_indices: [Option<usize>; 3],

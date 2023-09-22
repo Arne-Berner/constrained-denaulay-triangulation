@@ -587,7 +587,7 @@ impl TriangleSet {
             checked_triangles += 1;
         }
 
-        if checked_triangles >= self.triangle_count() && self.triangle_count() > 1 {
+        if (checked_triangles >= self.triangle_count()) && (self.triangle_count() > 1) {
             println!("Unable to find a triangle that contains the point ({:?}), starting at triangle {}. Are you generating very small triangles?", point, start_triangle);
             return None;
         }

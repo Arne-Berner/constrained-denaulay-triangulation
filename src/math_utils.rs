@@ -49,9 +49,12 @@ pub fn is_point_to_the_right_of_edge(
     edge_endpoint_b: Vec2,
     point: Vec2,
 ) -> bool {
-    ((edge_endpoint_b.x - edge_endpoint_a.x) * (point.y - edge_endpoint_a.y)
-        - (edge_endpoint_b.y - edge_endpoint_a.y) * (point.x - edge_endpoint_a.x))
-        < -0.0001 // Note: Due to extremely small negative values causing wrong results, a tolerance is used instead of zero
+let p1 = edge_endpoint_b.x - edge_endpoint_a.x;
+let p2 = point.y - edge_endpoint_a.y;
+let p3 = edge_endpoint_b.y - edge_endpoint_a.y;
+let p4 = point.x - edge_endpoint_a.x;
+    let determinante = p1* p2 - p3 * p4;
+    determinante < -0.00000001 // Note: Due to extremely small negative values causing wrong results, a tolerance is used instead of zero
 }
 
 /// Checks whether a point lies on the left side of an edge.

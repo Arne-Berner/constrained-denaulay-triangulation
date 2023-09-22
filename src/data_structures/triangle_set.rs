@@ -1,10 +1,14 @@
 use crate::{math_utils::is_point_to_the_right_of_edge, triangulation::triangulate_point};
 
-use super::{vec2::Vec2, triangle_info::TriangleInfo, found_or_added::FoundOrAdded, triangle::Triangle, error::CustomError};
+use super::{
+    error::CustomError, found_or_added::FoundOrAdded, triangle::Triangle,
+    triangle_info::TriangleInfo, vec2::Vec2,
+};
 
+#[derive(Debug)]
 pub struct TriangleSet {
     points: Vec<Vec2>,
-    triangle_infos: Vec<TriangleInfo>,
+    pub triangle_infos: Vec<TriangleInfo>,
 }
 
 impl TriangleSet {
@@ -75,7 +79,7 @@ impl TriangleSet {
         let mut checked_triangles = 0;
 
         while !is_triangle_found && checked_triangles < self.triangle_count() {
-            //weird place
+            checked_triangles += 1;
             is_triangle_found = true;
             for vertex_index in 0..3 {
                 // if it is outside of the triangle
@@ -95,12 +99,14 @@ impl TriangleSet {
                     }
                 }
             }
-            checked_triangles += 1;
         }
 
         if checked_triangles >= self.triangle_count() && self.triangle_count() > 1 {
+            // NOT CCW?!
+            println!("\n\n triangle_info:{:#?}\n\npoint1:{:#?}, point2:{:#?}, point3:{:#?}, point_to_insert{:#?}", self.triangle_infos[triangle_index], self.get_point_from_index(triangle_index, 0), self.get_point_from_index(triangle_index, 1), self.get_point_from_index(triangle_index, 2), point);
+            //println!("\n\n triangle_info:{:#?}\n\nindex:{:?}\n\npoints:{:?}\n\nchecked_triangles{:?}", self.triangle_infos[triangle_index], triangle_index, self.points, checked_triangles);
             println!("Unable to find a triangle that contains the point ({:?}), starting at triangle {}. Are you generating very small triangles?", point, start_triangle);
-            return Err(CustomError::PointOutOfBounds);
+            return Err(CustomError::PointNotInTriangle);
         }
 
         Ok(triangle_index)
@@ -145,59 +151,5 @@ impl TriangleSet {
         new_vertex: usize,
     ) {
         self.triangle_infos[triangle_index].vertex_indices[vertex_position] = new_vertex;
-    }
-
-    pub fn tesselate(mut self, maximum_triangle_area: f32) -> Result<Self, CustomError> {
-        // skip Supertriangle
-        let mut triangle_index = 2;
-        while triangle_index < self.triangle_count() {
-            // Skips  triangles sharing vertices with the Supertriangle
-            let mut is_supertriangle = false;
-            let triangle_info = self.get_triangle_info(triangle_index);
-
-            for j in 0..3 {
-                if triangle_info.vertex_indices[j] == 0
-                    || triangle_info.vertex_indices[j] == 1
-                    || triangle_info.vertex_indices[j] == 2
-                {
-                    // 0, 1 and 2 are vertices of the supertriangle
-                    is_supertriangle = true;
-                    break;
-                }
-            }
-
-            if is_supertriangle {
-                continue;
-            }
-
-            let triangle = self.get_triangle(triangle_index);
-            let triangle_area = crate::math_utils::calculate_triangle_area(&triangle);
-
-            if triangle_area > maximum_triangle_area {
-            if let Err(_) = triangulate_point(
-                &mut self,
-                triangle.p(0) + (triangle.p(1) - triangle.p(0)) * 0.5,
-            ) {
-                return Err(CustomError::TesselationFailed);
-            }
-
-            if let Err(_) = triangulate_point(
-                &mut self,
-                triangle.p(1) + (triangle.p(2) - triangle.p(1)) * 0.5,
-            ) {
-                return Err(CustomError::TesselationFailed);
-            }
-
-            if let Err(_) = triangulate_point(
-                &mut self,
-                triangle.p(2) + (triangle.p(0) - triangle.p(2)) * 0.5,
-            ) {
-                return Err(CustomError::TesselationFailed);
-            }
-            triangle_index = 2; // The tesselation restarts
-            }
-            triangle_index += 1;
-        }
-        return Ok(self);
     }
 }

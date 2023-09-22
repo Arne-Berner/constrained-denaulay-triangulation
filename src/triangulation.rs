@@ -1,5 +1,12 @@
 //TODO ADD TESTS FOR EVERY FUNCTION (in docs)
-use crate::{math_utils::is_point_inside_circumcircle, data_structures::{vec2::Vec2, triangle_set::TriangleSet, error::CustomError, point_bin_grid::PointBinGrid, triangle::Triangle, found_or_added::FoundOrAdded, triangle_info::TriangleInfo}, normalize::{self, normalize_points, Bounds}};
+use crate::{
+    data_structures::{
+        error::CustomError, found_or_added::FoundOrAdded, point_bin_grid::PointBinGrid,
+        triangle::Triangle, triangle_info::TriangleInfo, triangle_set::TriangleSet, vec2::Vec2,
+    },
+    math_utils::is_point_inside_circumcircle,
+    normalize::{self, Bounds},
+};
 
 struct TriangleIndexPair {
     pub adjacent: usize,
@@ -11,13 +18,19 @@ impl TriangleIndexPair {
     }
 }
 
-pub fn triangulate(input_points: &mut Vec<Vec2>) -> Result<(TriangleSet, Bounds), CustomError> {
+pub fn triangulate(
+    input_points: &mut Vec<Vec2>,
+    maximum_triangle_area: Option<f32>,
+    holes: Option<&Vec<Vec<Vec2>>>,
+) -> Result<(TriangleSet, Bounds), CustomError> {
     // Initialize containers
     let mut triangle_set = TriangleSet::new(input_points.len() - 2);
 
     let (normalized_points, bounds) = normalize::normalize_points(input_points, None);
 
-    println!("normalized points: {:?}", &normalized_points);
+    // println!("-------------------------------------");
+    // println!("normalized points: {:?}\n", &normalized_points);
+    // println!("-------------------------------------");
 
     // 2: Addition of points to the space partitioning grid
     let mut grid = PointBinGrid::new(
@@ -29,7 +42,9 @@ pub fn triangulate(input_points: &mut Vec<Vec2>) -> Result<(TriangleSet, Bounds)
     for point in &normalized_points {
         grid.add_point(*point);
     }
-    println!("grid with points: {:?}", grid);
+    // println!("-------------------------------------");
+    // println!("grid with points: {:?}/n", grid);
+    // println!("-------------------------------------");
 
     // 3: Supertriangle initialization
     let supertriangle = Triangle::new(
@@ -45,13 +60,80 @@ pub fn triangulate(input_points: &mut Vec<Vec2>) -> Result<(TriangleSet, Bounds)
     for cell in grid.cells().iter() {
         for point in cell {
             // All the points in the bin are added together, one by one
-            if triangulate_point(&mut triangle_set, *point).is_err() {
-                return Err(CustomError::TriangulationFailed);
+            match triangulate_point(&mut triangle_set, *point) {
+                Ok(_) => (),
+                Err(e) => {
+                    println!("\n\n{:#?}\n\n{:#?}", triangle_set, point);
+                    return Err(e);
+                }
             }
         }
     }
+    if let Some(maximum_triangle_area) = maximum_triangle_area {
+        tesselate(&mut triangle_set, maximum_triangle_area);
+    }
+    if let Some(holes) = holes {
+        // holes fn
+    }
 
     return Ok((triangle_set, bounds));
+}
+
+fn tesselate(
+    mut triangle_set: &mut TriangleSet,
+    maximum_triangle_area: f32,
+) -> Result<(), CustomError> {
+    // skip Supertriangle
+    let mut triangle_index = 2;
+    while triangle_index < triangle_set.triangle_count() {
+        // Skips  triangles sharing vertices with the Supertriangle
+        let mut is_supertriangle = false;
+        let triangle_info = triangle_set.get_triangle_info(triangle_index);
+
+        for j in 0..3 {
+            if triangle_info.vertex_indices[j] == 0
+                || triangle_info.vertex_indices[j] == 1
+                || triangle_info.vertex_indices[j] == 2
+            {
+                // 0, 1 and 2 are vertices of the supertriangle
+                is_supertriangle = true;
+                break;
+            }
+        }
+
+        if is_supertriangle {
+            continue;
+        }
+
+        let triangle = triangle_set.get_triangle(triangle_index);
+        let triangle_area = crate::math_utils::calculate_triangle_area(&triangle);
+
+        if triangle_area > maximum_triangle_area {
+            if let Err(_) = triangulate_point(
+                &mut triangle_set,
+                triangle.p(0) + (triangle.p(1) - triangle.p(0)) * 0.5,
+            ) {
+                return Err(CustomError::TesselationFailed);
+            }
+
+            if let Err(_) = triangulate_point(
+                &mut triangle_set,
+                triangle.p(1) + (triangle.p(2) - triangle.p(1)) * 0.5,
+            ) {
+                return Err(CustomError::TesselationFailed);
+            }
+
+            if let Err(_) = triangulate_point(
+                &mut triangle_set,
+                triangle.p(2) + (triangle.p(0) - triangle.p(2)) * 0.5,
+            ) {
+                return Err(CustomError::TesselationFailed);
+            }
+            triangle_index = 2; // The tesselation restarts
+        }
+        triangle_index += 1;
+    }
+    return Ok(());
 }
 
 // pub fn create_holes(
@@ -148,12 +230,16 @@ pub fn triangulate_point(
             containing_triangle.adjacent_triangle_indices[0], // the originals adjacent
             Some(containing_triangle_index), // this is the original triangle, that will get changed a bit
         );
+        // println!(
+        //     "\n\n\ntriangle count: {:?}\n\n\n",
+        //     triangle_set.triangle_count()
+        // );
         let first_triangle_index = triangle_set.add_triangle_info(first_triangle);
 
         let second_triangle = TriangleInfo::new([
             inserted_point_index,
             containing_triangle.vertex_indices[2],
-            containing_triangle.vertex_indices[1],
+            containing_triangle.vertex_indices[0],
         ])
         .with_adjacent(
             Some(containing_triangle_index),
@@ -241,7 +327,7 @@ pub fn triangulate_point(
         }
         return Ok(FoundOrAdded::Added(inserted_point_index));
     } else {
-        return Err(CustomError::PointOutOfBounds);
+        return Err(CustomError::PointNotInTriangle);
     }
 }
 
@@ -252,17 +338,26 @@ fn swap_edges(
     let adjacent_info = triangle_set.get_triangle_info(index_pair.adjacent);
     let current_info = triangle_set.get_triangle_info(index_pair.current);
     let shared_vertex = current_info.vertex_indices[1];
-    let mut adj_shared_vertex_index = 0;
+    let mut adj_shared_vertex_index = 4; // out of bounds
     for idx in 0..3 {
         if shared_vertex == adjacent_info.vertex_indices[idx] {
             adj_shared_vertex_index = idx;
             break;
-        } else {
-            panic!("the triangles don't share an index!")
         }
     }
+    if adj_shared_vertex_index > 2 {
+        panic!("the triangles don't share an index!")
+    }
+    println!("\nadjacent_info:{:?}\n", adjacent_info);
+    println!("\ncurrent_info:{:?}\n", current_info);
+    println!(
+        "\n\ntriangle count:{:?}\n\n{:?}\n\n",
+        triangle_set.triangle_count(),
+        triangle_set.triangle_infos
+    );
     let first_new_adjacent = adjacent_info.adjacent_triangle_indices[adj_shared_vertex_index];
-    let second_new_adjacent = adjacent_info.adjacent_triangle_indices[(adj_shared_vertex_index + 1) % 3];
+    let second_new_adjacent =
+        adjacent_info.adjacent_triangle_indices[(adj_shared_vertex_index + 1) % 3];
 
     if let Some(current_triangle_index) =
         adjacent_info.adjacent_triangle_indices[(adj_shared_vertex_index + 2) % 3]
@@ -282,7 +377,7 @@ fn swap_edges(
         triangle_set.replace_vertex_with_vertex(2, current_triangle_index, opposite_vertex);
         let new_adjacent_indices = [
             current_info.adjacent_triangle_indices[0],
-            second_new_adjacent,
+            first_new_adjacent,
             Some(index_pair.adjacent),
         ];
         triangle_set.replace_adjacent_vertices(current_triangle_index, new_adjacent_indices);
