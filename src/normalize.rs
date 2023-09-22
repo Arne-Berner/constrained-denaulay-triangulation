@@ -31,6 +31,6 @@ pub fn normalize_points(points: &mut Vec<Vec2>, bounds: Option<Bounds>) -> (&Vec
         Bounds { min, max }
     };
 
-    let points = points.iter().map(|point| (*point-bounds.min) / (bounds.max -bounds.min)).collect();
+    let points = *points.iter().map(|point| (*point-bounds.min) / (bounds.max -bounds.min)).collect();
     (points, bounds)
 }
