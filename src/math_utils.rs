@@ -254,6 +254,6 @@ pub fn is_quadrilateral_convex(a: Vec2, b: Vec2, c: Vec2, d: Vec2) -> bool {
 /// # Returns
 ///
 /// The area of the triangle.
-pub fn calculate_triangle_area(triangle: Triangle) -> f32 {
+pub fn calculate_triangle_area(triangle: &Triangle) -> f32 {
     (triangle.p(1) - triangle.p(0)).cross_product(triangle.p(2) - triangle.p(0)) * 0.5
 }

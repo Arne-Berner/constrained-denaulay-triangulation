@@ -4,7 +4,7 @@ pub struct Bounds {
     min: Vec2,
     max: Vec2,
 }
-pub fn normalize_points(points: Vec<Vec2>, bounds: Option<Bounds>) -> (Vec<Vec2>, Bounds) {
+pub fn normalize_points(points: &mut Vec<Vec2>, bounds: Option<Bounds>) -> (&Vec<Vec2>, Bounds) {
     let bounds = if let Some(bounds) = bounds {
         bounds
     } else {
@@ -31,8 +31,6 @@ pub fn normalize_points(points: Vec<Vec2>, bounds: Option<Bounds>) -> (Vec<Vec2>
         Bounds { min, max }
     };
 
-    for point in &points {
-        *point = (*point - bounds.min) / (bounds.max - bounds.min)
-    }
+    let points = points.iter().map(|point| (*point-bounds.min) / (bounds.max -bounds.min)).collect();
     (points, bounds)
 }

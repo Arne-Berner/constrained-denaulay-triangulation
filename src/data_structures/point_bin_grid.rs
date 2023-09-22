@@ -41,7 +41,7 @@ impl PointBinGrid {
         self.cells[bin_index as usize].push(new_point);
     }
 
-    pub fn cells(&self) -> Vec<Vec<Vec2>> {
-        self.cells
+    pub fn cells(&self) -> &Vec<Vec<Vec2>> {
+        &self.cells
     }
 }

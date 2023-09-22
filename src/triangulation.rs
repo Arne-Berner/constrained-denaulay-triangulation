@@ -1,5 +1,5 @@
 //TODO ADD TESTS FOR EVERY FUNCTION (in docs)
-use crate::{math_utils::is_point_inside_circumcircle, data_structures::{vec2::Vec2, triangle_set::TriangleSet, error::CustomError, point_bin_grid::PointBinGrid, triangle::Triangle}, normalize::{self, normalize_points}};
+use crate::{math_utils::is_point_inside_circumcircle, data_structures::{vec2::Vec2, triangle_set::TriangleSet, error::CustomError, point_bin_grid::PointBinGrid, triangle::Triangle, found_or_added::FoundOrAdded, triangle_info::TriangleInfo}, normalize::{self, normalize_points}};
 
 struct TriangleIndexPair {
     pub adjacent: usize,
@@ -11,7 +11,7 @@ impl TriangleIndexPair {
     }
 }
 
-pub fn triangulate(input_points: Vec<Vec2>) -> Result<TriangleSet, CustomError> {
+pub fn triangulate(input_points: &mut Vec<Vec2>) -> Result<TriangleSet, CustomError> {
     // Initialize containers
     let mut triangle_set = TriangleSet::new(input_points.len() - 2);
     let mut triangles_to_remove = Vec::<usize>::new();
@@ -28,7 +28,7 @@ pub fn triangulate(input_points: Vec<Vec2>) -> Result<TriangleSet, CustomError> 
     );
 
     for point in normalized_points {
-        grid.add_point(point);
+        grid.add_point(*point);
     }
     println!("grid with points: {:?}", grid);
 
@@ -55,65 +55,65 @@ pub fn triangulate(input_points: Vec<Vec2>) -> Result<TriangleSet, CustomError> 
     return Ok(triangle_set);
 }
 
-pub fn create_holes(
-    triangle_set: &mut TriangleSet,
-    holes: Option<&Vec<Vec<Vec2>>>,
-    bounds: normalize::Bounds,
-) -> Result<(), CustomError>{
-    println!("before creating holes");
-    // 8: Holes creation (constrained edges)
-    if let Some(holes) = holes {
-        // Adds the points of all the polygons to the triangulation
-        let mut hole_indices = Vec::new();
+// pub fn create_holes(
+//     triangle_set: &mut TriangleSet,
+//     holes: Option<&Vec<Vec<Vec2>>>,
+//     bounds: normalize::Bounds,
+// ) -> Result<(), CustomError>{
+//     println!("before creating holes");
+//     // 8: Holes creation (constrained edges)
+//     if let Some(holes) = holes {
+//         // Adds the points of all the polygons to the triangulation
+//         let mut hole_indices = Vec::new();
 
-        for hole in holes {
-            // 5.1: Normalize
-            let (normalized_hole, bounds) = normalize_points(*hole, Some(bounds));
+//         for hole in holes {
+//             // 5.1: Normalize
+//             let (normalized_hole, bounds) = normalize_points(*hole, Some(bounds));
 
-            let mut polygon_indices = Vec::new();
+//             let mut polygon_indices = Vec::new();
 
-            for point_to_insert in normalized_hole {
-                // 5.2: Add the points to the Triangle set
-                let point_index:usize;
-                match triangulate_point(&mut triangle_set, point_to_insert) {
-                    Ok(foundoradded) => polygon_indices.push(foundoradded.value()),
-                    Err(error) => {return Err(error);}
-                }
-            }
+//             for point_to_insert in normalized_hole {
+//                 // 5.2: Add the points to the Triangle set
+//                 let point_index:usize;
+//                 match triangulate_point(&mut triangle_set, point_to_insert) {
+//                     Ok(foundoradded) => polygon_indices.push(foundoradded.value()),
+//                     Err(error) => {return Err(error);}
+//                 }
+//             }
 
-            hole_indices.push(polygon_indices);
-        }
+//             hole_indices.push(polygon_indices);
+//         }
 
-        for edges in &hole_indices {
-            // todo no unwrap please
-            // 5.3: create the constrained edges
-            for j in 0..edges.len() {
-                DelaunayTriangulation::add_constrained_edge_to_triangulation(
-                    &mut triangle_set,
-                    edges[j].unwrap(),
-                    edges[(j + 1) % edges.len()].unwrap(),
-                );
-            }
-        }
+//         for edges in &hole_indices {
+//             // todo no unwrap please
+//             // 5.3: create the constrained edges
+//             for j in 0..edges.len() {
+//                 DelaunayTriangulation::add_constrained_edge_to_triangulation(
+//                     &mut triangle_set,
+//                     edges[j].unwrap(),
+//                     edges[(j + 1) % edges.len()].unwrap(),
+//                 );
+//             }
+//         }
 
-        // 5.4: Identify all the triangles in the polygon
-        for constrained_edge in &hole_indices {
-            let mut unwrapped_edges = Vec::<usize>::new();
-            for unwrapped_edge in constrained_edge {
-                unwrapped_edges.push(unwrapped_edge.unwrap())
-            }
-            triangle_set.get_triangles_in_polygon(&unwrapped_edges, &mut triangles_to_remove);
-        }
-    }
+//         // 5.4: Identify all the triangles in the polygon
+//         for constrained_edge in &hole_indices {
+//             let mut unwrapped_edges = Vec::<usize>::new();
+//             for unwrapped_edge in constrained_edge {
+//                 unwrapped_edges.push(unwrapped_edge.unwrap())
+//             }
+//             triangle_set.get_triangles_in_polygon(&unwrapped_edges, &mut triangles_to_remove);
+//         }
+//     }
 
-    DelaunayTriangulation::get_supertriangle_triangles(&mut triangle_set, &mut triangles_to_remove);
+//     DelaunayTriangulation::get_supertriangle_triangles(&mut triangle_set, &mut triangles_to_remove);
 
-    triangles_to_remove.sort();
+//     triangles_to_remove.sort();
 
-    DelaunayTriangulation::denormalize_points(&mut triangle_set.points, &main_point_cloud_bounds);
+//     DelaunayTriangulation::denormalize_points(&mut triangle_set.points, &main_point_cloud_bounds);
 
-    return Ok(());
-}
+//     return Ok(());
+// }
 
 pub fn triangulate_point(
     triangle_set: &mut TriangleSet,
@@ -148,9 +148,9 @@ pub fn triangulate_point(
             containing_triangle.adjacent_triangle_indices[0], // the originals adjacent
             Some(containing_triangle_index), // this is the original triangle, that will get changed a bit
         );
-        let first_triangle_index = triangle_set.add_triangle_info(&first_triangle);
+        let first_triangle_index = triangle_set.add_triangle_info(first_triangle);
 
-        let mut second_triangle = TriangleInfo::new([
+        let second_triangle = TriangleInfo::new([
             inserted_point_index,
             containing_triangle.vertex_indices[2],
             containing_triangle.vertex_indices[1],
@@ -161,7 +161,7 @@ pub fn triangulate_point(
             Some(first_triangle_index),
         );
 
-        let second_triangle_index = triangle_set.add_triangle_info(&second_triangle);
+        let second_triangle_index = triangle_set.add_triangle_info(second_triangle);
 
         // Sets the adjacency of the triangles that were adjacent to the original containing triangle
         if let Some(adjacent_triangle) = first_triangle.adjacent_triangle_indices[1] {
@@ -188,7 +188,7 @@ pub fn triangulate_point(
         triangle_set.replace_triangle(containing_triangle_index, &containing_triangle);
 
         // TODO there might be a good capacity to choose here
-        let index_pairs = Vec::<TriangleIndexPair>::new();
+        let mut index_pairs = Vec::<TriangleIndexPair>::new();
         // 6: Add new triangles to a stack
         if let Some(adjacent_index) = containing_triangle.adjacent_triangle_indices[1] {
             index_pairs.push(TriangleIndexPair {

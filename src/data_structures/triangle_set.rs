@@ -26,14 +26,14 @@ impl TriangleSet {
         FoundOrAdded::Added(self.points.len() - 1)
     }
 
-    pub fn add_triangle(&self, triangle: &Triangle) {
+    pub fn add_triangle(&mut self, triangle: &Triangle) {
         let p0 = self.add_point(triangle.p(0)).value();
         let p1 = self.add_point(triangle.p(1)).value();
         let p2 = self.add_point(triangle.p(2)).value();
         self.triangle_infos.push(TriangleInfo::new([p0, p1, p2]));
     }
 
-    pub fn add_triangle_info(&self, triangle_info_to_add: TriangleInfo) -> usize {
+    pub fn add_triangle_info(&mut self, triangle_info_to_add: TriangleInfo) -> usize {
         self.triangle_infos.push(triangle_info_to_add);
         self.triangle_infos.len() - 1
     }
@@ -49,8 +49,8 @@ impl TriangleSet {
         Triangle::new(p0, p1, p2)
     }
 
-    pub fn get_triangle_info(&self, index: usize) -> TriangleInfo {
-        self.triangle_infos[index]
+    pub fn get_triangle_info(&self, index: usize) -> &TriangleInfo {
+        &self.triangle_infos[index]
     }
 
     pub fn get_point_from_index(&self, triangle_index: usize, vertex_index: usize) -> Vec2 {
@@ -172,7 +172,7 @@ impl TriangleSet {
             }
 
             let triangle = self.get_triangle(triangle_index);
-            let triangle_area = crate::math_utils::calculate_triangle_area(triangle);
+            let triangle_area = crate::math_utils::calculate_triangle_area(&triangle);
 
             if triangle_area > maximum_triangle_area {
                 if triangulation::triangulate_point(
