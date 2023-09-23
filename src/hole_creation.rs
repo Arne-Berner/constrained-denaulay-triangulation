@@ -72,7 +72,7 @@ fn add_constrained_edge_to_triangulation(
 
     // 5.3.1: Search for the triangle that contains the beginning of the new edge
     let triangle_containing_a =
-        triangle_set.find_triangle_that_contains_line_endpoint(endpoint_a_index, endpoint_b_index);
+        triangle_set.find_triangle_that_contains_edge_start_and_intersects(endpoint_a_index, endpoint_b_index);
 
     // 5.3.2: Get all the triangle edges intersected by the constrained edge
     let mut intersected_triangle_edges = Vec::<Edge>::new();
@@ -250,7 +250,7 @@ fn add_constrained_edge_to_triangulation(
 fn get_supertriangle_triangles(triangle_set: &mut TriangleSet, output_triangles: &mut Vec<usize>) {
     for i in 0..3 {
         // Vertices of the supertriangle
-        let triangles_that_share_vertex = triangle_set.get_triangles_with_vertex(i);
+        let triangles_that_share_vertex = triangle_set.get_triangle_indices_with_vertex(i);
 
         for j in 0..triangles_that_share_vertex.len() {
             // if the triangles that share the vertex of the super triangles are not in there, put them in there

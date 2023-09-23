@@ -595,7 +595,7 @@ impl TriangleSet {
         Some(triangle_index)
     }
 
-    /// Given an edge AB, it searches for a triangle that contains the first point and the beginning of the edge.
+    /// Given an edge AB, it searches for a triangle that contains the first point and intersects the edge
     /// * `endpointAIndex` - The index of the first point.
     /// * `endpointBIndex` - The index of the second point.
     /// <returns>The index of the triangle that contains the first line endpoint.</returns>
@@ -609,7 +609,6 @@ impl TriangleSet {
         let mut found_triangle = None;
         let endpoint_a = self.points[endpoint_a_index];
         let endpoint_b = self.points[endpoint_b_index];
-        //Debug.DrawLine(endpointA + Vec2.up * 0.01f, endpointB + Vec2.up * 0.01f, Color.yellow, 10.0f);
 
         for i in 0..triangles_with_endpoint.len() {
             let vertex_position_in_triangle =

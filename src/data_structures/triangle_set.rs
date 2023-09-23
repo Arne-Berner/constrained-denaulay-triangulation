@@ -1,4 +1,4 @@
-use crate::{math_utils::is_point_to_the_right_of_edge, triangulation::triangulate_point};
+use crate::{math_utils::{is_point_to_the_right_of_edge, is_point_to_the_left_of_edge}, triangulation::triangulate_point};
 
 use super::{
     edge_info::EdgeInfo, error::CustomError, found_or_added::FoundOrAdded, triangle::Triangle,
@@ -9,6 +9,8 @@ use super::{
 pub struct TriangleSet {
     pub points: Vec<Vector>,
     pub triangle_infos: Vec<TriangleInfo>,
+    vertex_indices: Vec<usize>,
+    adjacent_indices: Vec<usize>,
 }
 
 impl TriangleSet {
@@ -57,7 +59,7 @@ impl TriangleSet {
         self.triangle_infos[index]
     }
 
-    pub fn get_point(&self, index: usize)->Vector{
+    pub fn get_point(&self, index: usize) -> Vector {
         self.points[index]
     }
 
@@ -286,9 +288,8 @@ impl TriangleSet {
 
     // TODO because of this function this triangle set might need a vec and adj field
     // instead of what it has right now.
-    // then triangle_info would be a function which takes the index..?
-    // no. fuck.
-    pub fn get_triangles_with_vertex(&self, vertex_index: usize) -> Vec<usize> {
+    // but not sure, since everything is on the heap as vec
+    pub fn get_triangle_indices_with_vertex(&self, vertex_index: usize) -> Vec<usize> {
         let mut output_triangles = Vec::new();
         for i in 0..self.triangle_count() {
             for j in 0..3 {
@@ -299,5 +300,49 @@ impl TriangleSet {
             }
         }
         output_triangles
+    }
+
+    /// This will find the triangle that contains endpoint a of the polygon and intersects with the a-b edge.
+    pub fn find_triangle_that_contains_edge_start_and_intersects(
+        &self,
+        endpoint_a_index: usize,
+        endpoint_b_index: usize,
+    ) -> usize {
+        let triangles_with_endpoint: Vec<usize> =
+            self.get_triangle_indices_with_vertex(endpoint_a_index);
+
+        let mut found_triangle = None;
+        let endpoint_a = self.points[endpoint_a_index];
+        let endpoint_b = self.points[endpoint_b_index];
+
+        for i in 0..triangles_with_endpoint.len() {
+            let mut vertex_position_in_triangle;
+            for j in 0..3{
+                if self.triangle_infos[triangles_with_endpoint[i]].vertex_indices[j] == endpoint_a_index{
+                    vertex_position_in_triangle = j;
+                }
+
+            }
+            let triangle_edge_point1 = self.points[self.triangle_infos[
+                triangles_with_endpoint[i]].vertex_indices[(vertex_position_in_triangle + 1) % 3]];
+            let triangle_edge_point2 = self.points[self.triangle_infos[
+                triangles_with_endpoint[i]].vertex_indices[(vertex_position_in_triangle + 2) % 3]];
+
+            // Is the line in the angle between the 2 contiguous edges of the triangle?
+            if is_point_to_the_left_of_edge(
+                endpoint_a,
+                triangle_edge_point1,
+                endpoint_b,
+            ) && is_point_to_the_left_of_edge(
+                triangle_edge_point2,
+                endpoint_a,
+                endpoint_b,
+            ) {
+                found_triangle = Some(triangles_with_endpoint[i]);
+                break;
+            }
+        }
+
+        found_triangle.expect("The beginning should at least be in the super triangle.")
     }
 }
