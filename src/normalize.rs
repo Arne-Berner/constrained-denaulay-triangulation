@@ -1,17 +1,17 @@
-use crate::data_structures::vec2::Vec2;
+use crate::data_structures::vector::Vector;
 
 // TODO add tests that check bounds
-#[derive(Debug)]
+#[derive(Debug, PartialEq)]
 pub struct Bounds {
-    min: Vec2,
-    max: Vec2,
+    min: Vector,
+    max: Vector,
 }
-pub fn normalize_points(points: &mut Vec<Vec2>, bounds: Option<Bounds>) -> (Vec<Vec2>, Bounds) {
+pub fn normalize_points(points: &mut Vec<Vector>, bounds: Option<Bounds>) -> (Vec<Vector>, Bounds) {
     let bounds = if let Some(bounds) = bounds {
         bounds
     } else {
-        let mut min = Vec2::new(f32::MAX, f32::MAX);
-        let mut max = Vec2::new(f32::MIN, f32::MIN);
+        let mut min = Vector::new(f32::MAX, f32::MAX);
+        let mut max = Vector::new(f32::MIN, f32::MIN);
 
         for i in 0..points.len() {
             if points[i].x > max.x {
@@ -33,7 +33,14 @@ pub fn normalize_points(points: &mut Vec<Vec2>, bounds: Option<Bounds>) -> (Vec<
         Bounds { min, max }
     };
 
-    let points = points.iter().map(|point| (*point-bounds.min) / (bounds.max -bounds.min)).collect::<Vec<_>>();
-    println!("\n\n{:?}\n\n",points);
+    let points = points
+        .iter()
+        .map(|point| (*point - bounds.min) / (bounds.max - bounds.min))
+        .collect::<Vec<_>>();
+    println!("\n\n{:?}\n\n", points);
     (points, bounds)
+}
+
+pub fn denormalize_points(input_points: &mut Vec<Vector>, bounds: &Bounds)->Vec<Vector>{
+    input_points.iter().map(|point| (*point * (bounds.max - bounds.min) + bounds.min)).collect()
 }

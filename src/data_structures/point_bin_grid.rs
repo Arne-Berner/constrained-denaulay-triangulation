@@ -1,16 +1,16 @@
-use super::vec2::Vec2;
+use super::vector::Vector;
 
 #[derive(Debug)]
 pub struct PointBinGrid {
-    cells: Vec<Vec<Vec2>>,
-    cell_size: Vec2,
-    grid_size: Vec2,
+    cells: Vec<Vec<Vector>>,
+    cell_size: Vector,
+    grid_size: Vector,
     cells_per_side: usize,
 }
 
 impl PointBinGrid {
     pub fn new(cells_per_side: usize) -> Self {
-        let grid_size = Vec2::new(1., 1.);
+        let grid_size = Vector::new(1., 1.);
         let cells = vec![vec![]; (cells_per_side * cells_per_side) as usize];
         let cell_size = grid_size / cells_per_side as f32;
 
@@ -21,7 +21,7 @@ impl PointBinGrid {
             cells_per_side,
         }
     }
-    pub fn add_point(&mut self, new_point: Vec2) {
+    pub fn add_point(&mut self, new_point: Vector) {
         // grid size should be one
         let row_index =
             (0.99 * self.cells_per_side as f32 * new_point.y / self.grid_size.y) as usize;
@@ -41,7 +41,7 @@ impl PointBinGrid {
         self.cells[bin_index as usize].push(new_point);
     }
 
-    pub fn cells(&self) -> &Vec<Vec<Vec2>> {
+    pub fn cells(&self) -> &Vec<Vec<Vector>> {
         &self.cells
     }
 }

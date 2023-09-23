@@ -4,4 +4,6 @@ pub enum CustomError {
     SwappingFailed,
     TrianglesDontShareIndex,
     TesselationFailed,
+    EdgeNotFoundInTriangles(usize, usize),
+    PolygonIsOpen,
 }

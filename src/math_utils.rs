@@ -1,4 +1,4 @@
-use crate::data_structures::{vec2::Vec2, triangle::Triangle};
+use crate::data_structures::{triangle::Triangle, vector::Vector};
 /// Calculates the determinant of a 3 columns x 3 rows matrix.
 ///
 /// # Arguments
@@ -45,15 +45,15 @@ pub fn calculate_matrix3x3_determinant(
 ///
 /// `true` if the point is on the right side; `false` if the point is on the left side or is contained in the edge.
 pub fn is_point_to_the_right_of_edge(
-    edge_endpoint_a: Vec2,
-    edge_endpoint_b: Vec2,
-    point: Vec2,
+    edge_endpoint_a: Vector,
+    edge_endpoint_b: Vector,
+    point: Vector,
 ) -> bool {
-let p1 = edge_endpoint_b.x - edge_endpoint_a.x;
-let p2 = point.y - edge_endpoint_a.y;
-let p3 = edge_endpoint_b.y - edge_endpoint_a.y;
-let p4 = point.x - edge_endpoint_a.x;
-    let determinante = p1* p2 - p3 * p4;
+    let p1 = edge_endpoint_b.x - edge_endpoint_a.x;
+    let p2 = point.y - edge_endpoint_a.y;
+    let p3 = edge_endpoint_b.y - edge_endpoint_a.y;
+    let p4 = point.x - edge_endpoint_a.x;
+    let determinante = p1 * p2 - p3 * p4;
     determinante < -0.00000001 // Note: Due to extremely small negative values causing wrong results, a tolerance is used instead of zero
 }
 
@@ -69,9 +69,9 @@ let p4 = point.x - edge_endpoint_a.x;
 ///
 /// `true` if the point is on the left side; `false` if the point is on the right side or is contained in the edge.
 pub fn is_point_to_the_left_of_edge(
-    edge_endpoint_a: Vec2,
-    edge_endpoint_b: Vec2,
-    point: Vec2,
+    edge_endpoint_a: Vector,
+    edge_endpoint_b: Vector,
+    point: Vector,
 ) -> bool {
     !is_point_to_the_right_of_edge(edge_endpoint_a, edge_endpoint_b, point)
 }
@@ -89,10 +89,10 @@ pub fn is_point_to_the_left_of_edge(
 ///
 /// Returns true if the point is contained in the triangle; false otherwise.
 pub fn is_point_inside_triangle(
-    triangle_p0: Vec2,
-    triangle_p1: Vec2,
-    triangle_p2: Vec2,
-    point_to_check: Vec2,
+    triangle_p0: Vector,
+    triangle_p1: Vector,
+    triangle_p2: Vector,
+    point_to_check: Vector,
 ) -> bool {
     is_point_to_the_left_of_edge(triangle_p0, triangle_p1, point_to_check)
         && is_point_to_the_left_of_edge(triangle_p1, triangle_p2, point_to_check)
@@ -100,7 +100,7 @@ pub fn is_point_inside_triangle(
 }
 
 // https://gamedev.stackexchange.com/questions/71328/how-can-i-add-and-subtract-convex-polygons
-pub fn is_point_inside_circumcircle(triangle: Triangle, point_to_check: Vec2) -> bool {
+pub fn is_point_inside_circumcircle(triangle: Triangle, point_to_check: Vector) -> bool {
     // sloan algorithm
     let x02 = triangle.p(0).x - triangle.p(2).x;
     let x12 = triangle.p(1).x - triangle.p(2).x;
@@ -111,19 +111,19 @@ pub fn is_point_inside_circumcircle(triangle: Triangle, point_to_check: Vec2) ->
     let y0p = triangle.p(0).y - point_to_check.y;
     let y1p = triangle.p(1).y - point_to_check.y;
 
-        let cosa = x02 * x12 + y02 * y12;
-        let cosb = x0p * x1p + y0p * y1p;
+    let cosa = x02 * x12 + y02 * y12;
+    let cosb = x0p * x1p + y0p * y1p;
 
-        if cosa >= 0. && cosb >= 0.{
-            return false;
-        }
-        if cosa < 0. && cosb < 0.{
-            return true;
-        }
-    
+    if cosa >= 0. && cosb >= 0. {
+        return false;
+    }
+    if cosa < 0. && cosb < 0. {
+        return true;
+    }
+
     let sina = x02 * y12 - x12 * y02;
     let sinb = x1p * y0p - x0p * y1p;
-    if sina * cosb + sinb * cosa < 0.{
+    if sina * cosb + sinb * cosa < 0. {
         return true;
     }
     false
@@ -143,13 +143,13 @@ pub fn is_point_inside_circumcircle(triangle: Triangle, point_to_check: Vec2) ->
 ///
 /// Returns true if the line segments intersect; false otherwise.
 pub fn intersection_between_lines(
-    endpoint_a1: Vec2,
-    endpoint_b1: Vec2,
-    endpoint_a2: Vec2,
-    endpoint_b2: Vec2,
-) -> Option<Vec2> {
+    endpoint_a1: Vector,
+    endpoint_b1: Vector,
+    endpoint_a2: Vector,
+    endpoint_b2: Vector,
+) -> Option<Vector> {
     // https://stackoverflow.com/questions/4543506/algorithm-for-intersection-of-2-lines
-    let mut intersection_point = Vec2::new(f32::MAX, f32::MAX);
+    let mut intersection_point = Vector::new(f32::MAX, f32::MAX);
 
     let is_line1_vertical = endpoint_b1.x == endpoint_a1.x;
     let is_line2_vertical = endpoint_b2.x == endpoint_a2.x;
@@ -213,13 +213,13 @@ pub fn intersection_between_lines(
     }
 }
 
-pub fn is_triangle_vertices_cw(point0: Vec2, point1: Vec2, point2: Vec2) -> bool {
+pub fn is_triangle_vertices_cw(point0: Vector, point1: Vector, point2: Vector) -> bool {
     calculate_matrix3x3_determinant(
         point0.x, point0.y, 1.0, point1.x, point1.y, 1.0, point2.x, point2.y, 1.0,
     ) < 0.0
 }
 
-pub fn is_quadrilateral_convex(a: Vec2, b: Vec2, c: Vec2, d: Vec2) -> bool {
+pub fn is_quadrilateral_convex(a: Vector, b: Vector, c: Vector, d: Vector) -> bool {
     let abc = is_triangle_vertices_cw(a, b, c);
     let abd = is_triangle_vertices_cw(a, b, d);
     let bcd = is_triangle_vertices_cw(b, c, d);

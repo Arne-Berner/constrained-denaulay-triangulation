@@ -1,16 +1,16 @@
-use crate::data_structures::vec2::Vec2;
+use crate::data_structures::vector::Vector;
 pub struct Triangle {
-    vertices: [Vec2; 3],
+    vertices: [Vector; 3],
 }
 
 impl Triangle {
-    pub fn new(vertex0: Vec2, vertex1: Vec2, vertex2: Vec2) -> Self {
+    pub fn new(vertex0: Vector, vertex1: Vector, vertex2: Vector) -> Self {
         Triangle {
             vertices: [vertex0, vertex1, vertex2],
         }
     }
 
-    pub fn p(&self, index: usize) -> Vec2 {
+    pub fn p(&self, index: usize) -> Vector {
         self.vertices[index]
     }
 }

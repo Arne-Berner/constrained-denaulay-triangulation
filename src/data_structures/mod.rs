@@ -4,4 +4,5 @@ pub mod point_bin_grid;
 pub mod triangle_info;
 pub mod triangle_set;
 pub mod triangle;
-pub mod vec2;
+pub mod vector;
+pub mod edge_info;
