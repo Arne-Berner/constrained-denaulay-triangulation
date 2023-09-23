@@ -5,7 +5,7 @@ use crate::{
         triangle::Triangle, triangle_info::TriangleInfo, triangle_set::TriangleSet, vec2::Vec2,
     },
     math_utils::is_point_inside_circumcircle,
-    normalize::{self, Bounds},
+    normalize::{self, Bounds, normalize_points},
 };
 
 struct TriangleIndexPair {
@@ -18,15 +18,58 @@ impl TriangleIndexPair {
     }
 }
 
+/// This will triangulate any polygon using the delaunay constraint
+/// 
+/// You may provide input points, which will be used to create the triangulated polygon.
+/// Then you can use optionally a vec of holes to create holes in the polygon mentioned above. 
+/// At least you can tesselate the area so that it may only contain triangles of the maximum area size given.
+/// # Examples
+/// This example uses an easy convex polygon.
+/// ```
+/// let mut input_points = Vec::new();
+/// input_points.push(Vec2::new(-0., 7.0));
+/// input_points.push(Vec2::new(-5., 5.));
+/// input_points.push(Vec2::new(5., 5.));
+/// input_points.push(Vec2::new(-2., 3.));
+/// input_points.push(Vec2::new(3., 1.));
+/// input_points.push(Vec2::new(-4., -1.));
+/// input_points.push(Vec2::new(1., -2.));
+/// input_points.push(Vec2::new(-6., -4.));
+/// input_points.push(Vec2::new(5., -4.));
+/// let (triangle_set, bounds) = match triangulation::triangulate(&mut input_points, None, None){
+///     Ok(result) => result,
+///     Err(err) => panic!("triangulation failed!{:?}", err),
+/// };
+/// assert!(triangle_set.triangle_count() > 0);
+/// ```
+/// Even more complex are no problem either. (such as with collinear lines to the super triangle and each other.)
+/// ```
+/// let mut input_points = Vec::new();
+/// input_points.push(Vec2::new(1., 1.));
+/// input_points.push(Vec2::new(3., 4.));
+/// input_points.push(Vec2::new(-2., 3.));
+/// input_points.push(Vec2::new(-2., 3.));
+/// input_points.push(Vec2::new(-2.,-2.));
+/// input_points.push(Vec2::new(-1., -1.));
+/// input_points.push(Vec2::new(-2.,-3.));
+/// input_points.push(Vec2::new(4.,-2.));
+/// let (triangle_set, bounds) = match triangulation::triangulate(&mut input_points, None, None){
+///     Ok(result) => result,
+///     Err(err) => panic!("triangulation failed!{:?}", err),
+/// };
+/// assert!(triangle_set.triangle_count() > 0);
+/// ```
+/// # Panics
+/// The triangulation might panic if the holes are 50x the size of the polygon to be triangulated.
 pub fn triangulate(
     input_points: &mut Vec<Vec2>,
-    maximum_triangle_area: Option<f32>,
     holes: Option<&Vec<Vec<Vec2>>>,
+    maximum_triangle_area: Option<f32>,
 ) -> Result<(TriangleSet, Bounds), CustomError> {
     // Initialize containers
     let mut triangle_set = TriangleSet::new(input_points.len() - 2);
 
-    let (normalized_points, bounds) = normalize::normalize_points(input_points, None);
+    let (normalized_points, bounds) = normalize_points(input_points, None);
 
     // println!("-------------------------------------");
     // println!("normalized points: {:?}\n", &normalized_points);
@@ -136,66 +179,66 @@ fn tesselate(
     return Ok(());
 }
 
-// pub fn create_holes(
-//     triangle_set: &mut TriangleSet,
-//     holes: Option<&Vec<Vec<Vec2>>>,
-//     bounds: normalize::Bounds,
-// ) -> Result<(), CustomError>{
-//    let mut triangles_to_remove = Vec::<usize>::new();
-//     println!("before creating holes");
-//     // 8: Holes creation (constrained edges)
-//     if let Some(holes) = holes {
-//         // Adds the points of all the polygons to the triangulation
-//         let mut hole_indices = Vec::new();
+pub fn create_holes(
+    triangle_set: &mut TriangleSet,
+    holes: Option<&Vec<Vec<Vec2>>>,
+    bounds: Bounds,
+) -> Result<(), CustomError>{
+   let mut triangles_to_remove = Vec::<usize>::new();
+    println!("before creating holes");
+    // 8: Holes creation (constrained edges)
+    if let Some(holes) = holes {
+        // Adds the points of all the polygons to the triangulation
+        let mut hole_indices = Vec::new();
 
-//         for hole in holes {
-//             // 5.1: Normalize
-//             let (normalized_hole, bounds) = normalize_points(*hole, Some(bounds));
+        for hole in holes {
+            // 5.1: Normalize
+            let (normalized_hole, bounds) = normalize_points(*hole, Some(bounds));
 
-//             let mut polygon_indices = Vec::new();
+            let mut polygon_indices = Vec::new();
 
-//             for point_to_insert in normalized_hole {
-//                 // 5.2: Add the points to the Triangle set
-//                 let point_index:usize;
-//                 match triangulate_point(&mut triangle_set, point_to_insert) {
-//                     Ok(foundoradded) => polygon_indices.push(foundoradded.value()),
-//                     Err(error) => {return Err(error);}
-//                 }
-//             }
+            for point_to_insert in normalized_hole {
+                // 5.2: Add the points to the Triangle set
+                let point_index:usize;
+                match triangulate_point(&mut triangle_set, point_to_insert) {
+                    Ok(foundoradded) => polygon_indices.push(foundoradded.value()),
+                    Err(error) => {return Err(error);}
+                }
+            }
 
-//             hole_indices.push(polygon_indices);
-//         }
+            hole_indices.push(polygon_indices);
+        }
 
-//         for edges in &hole_indices {
-//             // todo no unwrap please
-//             // 5.3: create the constrained edges
-//             for j in 0..edges.len() {
-//                 DelaunayTriangulation::add_constrained_edge_to_triangulation(
-//                     &mut triangle_set,
-//                     edges[j].unwrap(),
-//                     edges[(j + 1) % edges.len()].unwrap(),
-//                 );
-//             }
-//         }
+        for edges in &hole_indices {
+            // todo no unwrap please
+            // 5.3: create the constrained edges
+            for j in 0..edges.len() {
+                DelaunayTriangulation::add_constrained_edge_to_triangulation(
+                    &mut triangle_set,
+                    edges[j].unwrap(),
+                    edges[(j + 1) % edges.len()].unwrap(),
+                );
+            }
+        }
 
-//         // 5.4: Identify all the triangles in the polygon
-//         for constrained_edge in &hole_indices {
-//             let mut unwrapped_edges = Vec::<usize>::new();
-//             for unwrapped_edge in constrained_edge {
-//                 unwrapped_edges.push(unwrapped_edge.unwrap())
-//             }
-//             triangle_set.get_triangles_in_polygon(&unwrapped_edges, &mut triangles_to_remove);
-//         }
-//     }
+        // 5.4: Identify all the triangles in the polygon
+        for constrained_edge in &hole_indices {
+            let mut unwrapped_edges = Vec::<usize>::new();
+            for unwrapped_edge in constrained_edge {
+                unwrapped_edges.push(unwrapped_edge.unwrap())
+            }
+            triangle_set.get_triangles_in_polygon(&unwrapped_edges, &mut triangles_to_remove);
+        }
+    }
 
-//     DelaunayTriangulation::get_supertriangle_triangles(&mut triangle_set, &mut triangles_to_remove);
+    DelaunayTriangulation::get_supertriangle_triangles(&mut triangle_set, &mut triangles_to_remove);
 
-//     triangles_to_remove.sort();
+    triangles_to_remove.sort();
 
-//     DelaunayTriangulation::denormalize_points(&mut triangle_set.points, &main_point_cloud_bounds);
+    DelaunayTriangulation::denormalize_points(&mut triangle_set.points, &main_point_cloud_bounds);
 
-//     return Ok(());
-// }
+    return Ok(());
+}
 
 pub fn triangulate_point(
     triangle_set: &mut TriangleSet,
