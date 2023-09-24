@@ -117,6 +117,7 @@ pub fn triangulate(
         triangle_set.points = denormalize_points(&mut triangle_set.points, &bounds);
         triangles = get_triangles_discarding_holes(&triangle_set, triangles_to_remove);
     } else {
+        println!("{:#?}", triangle_set.triangle_infos);
         let mut triangles_to_remove = Vec::new();
         //get_supertriangle_triangles(&mut triangle_set, &mut triangles_to_remove);
         triangle_set.points = denormalize_points(&mut triangle_set.points, &bounds);
@@ -296,23 +297,22 @@ pub fn triangulate_point(
                     swap_edges(&index_pair, triangle_set, 1)
                 {
                     // 7.3 push new adjacents on stack
-                    if let Some(new_opposite_index) = first_new_adjacent {
-                        index_pairs.push(TriangleIndexPair::new(
-                            new_opposite_index,
-                            index_pair.current,
-                        ))
-                    }
                     if let Some(new_oppositve_index) = second_new_adjacent {
                         index_pairs.push(TriangleIndexPair::new(
                             new_oppositve_index,
                             index_pair.adjacent,
                         ))
                     }
+                    if let Some(new_opposite_index) = first_new_adjacent {
+                        index_pairs.push(TriangleIndexPair::new(
+                            new_opposite_index,
+                            index_pair.current,
+                        ))
+                    }
                 } else {
                     return Err(CustomError::SwappingFailed);
                 }
             }
-            
         }
         return Ok(FoundOrAdded::Added(inserted_point_index));
     } else {
@@ -325,9 +325,8 @@ pub fn swap_edges(
     triangle_set: &mut TriangleSet,
     shared_vertex_index: usize,
 ) -> Result<(Option<usize>, Option<usize>), CustomError> {
-    println!("SWAP, {}", triangle_set.triangle_count());
-    let adjacent_info = triangle_set.get_triangle_info(index_pair.adjacent);
     let current_info = triangle_set.get_triangle_info(index_pair.current);
+    let adjacent_info = triangle_set.get_triangle_info(index_pair.adjacent);
     let p = current_info.vertex_indices[(shared_vertex_index + 2) % 3];
     let p2 = current_info.vertex_indices[(shared_vertex_index + 1) % 3];
     // assumption (needs the FIRST shared vertex of current)
@@ -347,18 +346,14 @@ pub fn swap_edges(
         adjacent_info.adjacent_triangle_indices[(adj_shared_vertex_index + 1) % 3];
 
     let opposite_vertex = adjacent_info.vertex_indices[(adj_shared_vertex_index + 1) % 3];
-    let a2 =         current_info.adjacent_triangle_indices[(shared_vertex_index + 1) % 3];
+    let a2 = current_info.adjacent_triangle_indices[(shared_vertex_index + 1) % 3];
     let new_adjacent = TriangleInfo::new([
         // Assumption
         p,
         opposite_vertex,
         p2,
     ])
-    .with_adjacent(
-        Some(index_pair.current),
-        second_new_adjacent,
-        a2
-    );
+    .with_adjacent(Some(index_pair.current), second_new_adjacent, a2);
     triangle_set.replace_triangle(index_pair.adjacent, &new_adjacent);
     let new_current = TriangleInfo::new([
         // Assumption
@@ -372,8 +367,8 @@ pub fn swap_edges(
         Some(index_pair.adjacent),
     );
     triangle_set.replace_triangle(index_pair.current, &new_current);
-
     // change the adjacent triangles of the changed adjacent triangles
+    
     if let Some(needs_replacement_index) = first_new_adjacent {
         triangle_set.replace_adjacent(
             needs_replacement_index,
@@ -381,7 +376,7 @@ pub fn swap_edges(
             Some(index_pair.current),
         );
     }
-    if let Some(needs_replacement_index) =  a2{
+    if let Some(needs_replacement_index) = a2 {
         triangle_set.replace_adjacent(
             needs_replacement_index,
             Some(index_pair.current),
