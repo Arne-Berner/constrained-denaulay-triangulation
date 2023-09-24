@@ -213,7 +213,7 @@ pub fn triangulate_point(
             containing_triangle.vertex_indices[1],
         ])
         .with_adjacent(
-            Some(triangle_set.triangle_count() + 1), // the second triangle
+            None,                                             // the second triangle
             containing_triangle.adjacent_triangle_indices[0], // the originals adjacent
             Some(containing_triangle_index), // this is the original triangle, that will get changed a bit
         );
@@ -231,6 +231,8 @@ pub fn triangulate_point(
         );
 
         let second_triangle_index = triangle_set.add_triangle_info(second_triangle);
+        triangle_set.triangle_infos[first_triangle_index].adjacent_triangle_indices[0] =
+            Some(second_triangle_index);
 
         // Sets the adjacency of the triangles that were adjacent to the original containing triangle
         if let Some(adjacent_triangle) = first_triangle.adjacent_triangle_indices[1] {
@@ -251,10 +253,12 @@ pub fn triangulate_point(
         // 5.1: Transform containing triangle into the third
         // Original triangle is transformed into the third triangle after the point has split the containing triangle into 3
         // using that triangle to keep main, so that the least has to change
-        containing_triangle.vertex_indices[0] = inserted_point_index;
-        containing_triangle.adjacent_triangle_indices[0] = Some(first_triangle_index);
-        containing_triangle.adjacent_triangle_indices[2] = Some(second_triangle_index);
-        triangle_set.replace_triangle(containing_triangle_index, &containing_triangle);
+        triangle_set.triangle_infos[containing_triangle_index].vertex_indices[0] =
+            inserted_point_index;
+        triangle_set.triangle_infos[containing_triangle_index].adjacent_triangle_indices[0] =
+            Some(first_triangle_index);
+        triangle_set.triangle_infos[containing_triangle_index].adjacent_triangle_indices[2] =
+            Some(second_triangle_index);
 
         // TODO there might be a good capacity to choose here
         let mut index_pairs = Vec::<TriangleIndexPair>::new();
@@ -288,6 +292,7 @@ pub fn triangulate_point(
                 // delaunay constraint not fullfilled
                 if let Ok((first_new_adjacent, second_new_adjacent)) =
                     // 7.2
+                    // TODO rewrite to Option<(usize, usize)>
                     swap_edges(&index_pair, triangle_set, 1)
                 {
                     // 7.3 push new adjacents on stack
@@ -307,6 +312,7 @@ pub fn triangulate_point(
                     return Err(CustomError::SwappingFailed);
                 }
             }
+            
         }
         return Ok(FoundOrAdded::Added(inserted_point_index));
     } else {
@@ -319,8 +325,11 @@ pub fn swap_edges(
     triangle_set: &mut TriangleSet,
     shared_vertex_index: usize,
 ) -> Result<(Option<usize>, Option<usize>), CustomError> {
+    println!("SWAP, {}", triangle_set.triangle_count());
     let adjacent_info = triangle_set.get_triangle_info(index_pair.adjacent);
     let current_info = triangle_set.get_triangle_info(index_pair.current);
+    let p = current_info.vertex_indices[(shared_vertex_index + 2) % 3];
+    let p2 = current_info.vertex_indices[(shared_vertex_index + 1) % 3];
     // assumption (needs the FIRST shared vertex of current)
     let shared_vertex = current_info.vertex_indices[shared_vertex_index];
     let mut adj_shared_vertex_index = 4; // out of bounds
@@ -338,41 +347,45 @@ pub fn swap_edges(
         adjacent_info.adjacent_triangle_indices[(adj_shared_vertex_index + 1) % 3];
 
     let opposite_vertex = adjacent_info.vertex_indices[(adj_shared_vertex_index + 1) % 3];
+    let a2 =         current_info.adjacent_triangle_indices[(shared_vertex_index + 1) % 3];
     let new_adjacent = TriangleInfo::new([
         // Assumption
-        current_info.vertex_indices[(shared_vertex_index + 2) % 3],
+        p,
         opposite_vertex,
-        current_info.vertex_indices[(shared_vertex_index + 1) % 3],
+        p2,
     ])
     .with_adjacent(
         Some(index_pair.current),
         second_new_adjacent,
-        current_info.adjacent_triangle_indices[(shared_vertex_index + 1) % 3],
+        a2
     );
     triangle_set.replace_triangle(index_pair.adjacent, &new_adjacent);
-    triangle_set.replace_vertex_with_vertex(index_pair.current, 2, opposite_vertex);
-    let new_adjacent_indices = [
+    let new_current = TriangleInfo::new([
+        // Assumption
+        p,
+        shared_vertex,
+        opposite_vertex,
+    ])
+    .with_adjacent(
         current_info.adjacent_triangle_indices[(shared_vertex_index + 2) % 3],
         first_new_adjacent,
         Some(index_pair.adjacent),
-    ];
-    triangle_set.replace_adjacent_vertices(index_pair.current, new_adjacent_indices);
+    );
+    triangle_set.replace_triangle(index_pair.current, &new_current);
 
     // change the adjacent triangles of the changed adjacent triangles
-    if let Some(needs_replacement_index) =
-        current_info.adjacent_triangle_indices[(shared_vertex_index + 2) % 3]
-    {
-        triangle_set.replace_adjacent(
-            needs_replacement_index,
-            Some(index_pair.current),
-            Some(index_pair.adjacent),
-        );
-    }
     if let Some(needs_replacement_index) = first_new_adjacent {
         triangle_set.replace_adjacent(
             needs_replacement_index,
             Some(index_pair.adjacent),
             Some(index_pair.current),
+        );
+    }
+    if let Some(needs_replacement_index) =  a2{
+        triangle_set.replace_adjacent(
+            needs_replacement_index,
+            Some(index_pair.current),
+            Some(index_pair.adjacent),
         );
     }
     Ok((first_new_adjacent, second_new_adjacent))
@@ -408,7 +421,6 @@ fn get_triangles_discarding_holes(
             ));
         } else {
             idxs_i += 1;
-
         }
     }
     output_triangles
