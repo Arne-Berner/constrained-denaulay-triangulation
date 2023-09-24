@@ -172,7 +172,7 @@ impl TriangleSet {
         // First it gets all the triangles of the outline
         for outline_index in 0..polygon_outline.len() {
             // For every edge, it gets the inner triangle that contains such edge
-            if let Some(edge_in_triangle) = self.find_triangle_that_contains_edge(
+            if let Some(edge_in_triangle) = self.find_edge_info_for_triangle(
                 polygon_outline[outline_index],
                 polygon_outline[(outline_index + 1) % polygon_outline.len()],
             ) {
@@ -269,7 +269,7 @@ impl TriangleSet {
     }
 
     // This will find only one triangle, because edges are directional
-    pub fn find_triangle_that_contains_edge(
+    pub fn find_edge_info_for_triangle(
         &self,
         edge_vertex_a: usize,
         edge_vertex_b: usize,
@@ -379,7 +379,12 @@ impl TriangleSet {
                     )
                     .is_some()
                     {
-                        intersected_triangle_edges.push(EdgeInfo::new(triangle_index, i, edge_vertex_a, edge_vertex_b));
+                        intersected_triangle_edges.push(EdgeInfo::new(
+                            triangle_index,
+                            i,
+                            edge_vertex_a,
+                            edge_vertex_b,
+                        ));
 
                         break;
                     }

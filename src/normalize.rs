@@ -1,7 +1,7 @@
 use crate::data_structures::vector::Vector;
 
 // TODO add tests that check bounds
-#[derive(Debug, PartialEq)]
+#[derive(Debug, PartialEq, Clone, Copy)]
 pub struct Bounds {
     min: Vector,
     max: Vector,

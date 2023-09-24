@@ -5,7 +5,7 @@ use crate::{
         triangle::Triangle, triangle_info::TriangleInfo, triangle_set::TriangleSet, vector::Vector,
     },
     math_utils::is_point_inside_circumcircle,
-    normalize::{self, normalize_points, Bounds, denormalize_points}, 
+    normalize::{self, normalize_points, Bounds, denormalize_points}, hole_creation::create_holes, 
 };
 
 pub struct TriangleIndexPair {
@@ -65,7 +65,7 @@ impl TriangleIndexPair {
 /// The triangulation might panic if the holes are 50x the size of the polygon to be triangulated.
 pub fn triangulate(
     input_points: &mut Vec<Vector>,
-    holes: Option<&Vec<Vec<Vector>>>,
+    holes:  Option<&mut Vec<Vec<Vector>>>,
     maximum_triangle_area: Option<f32>,
 ) -> Result<(TriangleSet, Bounds), CustomError> {
     // Initialize containers
@@ -111,7 +111,7 @@ pub fn triangulate(
         tesselate(&mut triangle_set, maximum_triangle_area)?;
     }
     if let Some(holes) = holes {
-        //create_holes(&mut triangle_set, holes, bounds);
+        create_holes(&mut triangle_set, holes, bounds);
     }
     denormalize_points(&mut triangle_set.points, &bounds);
 
