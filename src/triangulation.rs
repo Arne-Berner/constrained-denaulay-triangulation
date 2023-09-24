@@ -4,7 +4,7 @@ use crate::{
         error::CustomError, found_or_added::FoundOrAdded, point_bin_grid::PointBinGrid,
         triangle::Triangle, triangle_info::TriangleInfo, triangle_set::TriangleSet, vector::Vector,
     },
-    hole_creation::create_holes,
+    hole_creation::{create_holes, get_supertriangle_triangles},
     math_utils::is_point_inside_circumcircle,
     normalize::{self, denormalize_points, normalize_points, Bounds},
 };
@@ -119,7 +119,10 @@ pub fn triangulate(
         triangles = get_triangles_discarding_holes(&triangle_set, triangles_to_remove);
     } else {
         triangle_set.points = denormalize_points(&mut triangle_set.points, &bounds);
-        triangles = get_triangles(&triangle_set);
+        println!("points :{:#?}",triangle_set.points);
+        let mut triangles_to_remove = Vec::new();
+        get_supertriangle_triangles(&mut triangle_set, &mut triangles_to_remove);
+        triangles = get_triangles_discarding_holes(&triangle_set, triangles_to_remove);
     }
 
     return Ok(triangles);

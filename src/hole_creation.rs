@@ -254,7 +254,7 @@ fn add_constrained_edge_to_triangulation(
     return Ok(());
 }
 
-fn get_supertriangle_triangles(triangle_set: &mut TriangleSet, output_triangles: &mut Vec<usize>) {
+pub fn get_supertriangle_triangles(triangle_set: &mut TriangleSet, output_triangles: &mut Vec<usize>) {
     for i in 0..3 {
         // Vertices of the supertriangle
         let triangles_that_share_vertex = triangle_set.get_triangle_indices_with_vertex(i);
