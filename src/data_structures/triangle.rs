@@ -1,4 +1,5 @@
 use crate::data_structures::vector::Vector;
+#[derive(Debug,Clone,Copy)]
 pub struct Triangle {
     vertices: [Vector; 3],
 }
