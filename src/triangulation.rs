@@ -114,10 +114,11 @@ pub fn triangulate(
     let triangles;
     if let Some(holes) = holes {
         let triangles_to_remove = create_holes(&mut triangle_set, holes, bounds)?;
-        denormalize_points(&mut triangle_set.points, &bounds);
+        println!("triangle set triangle infos:{:#?}", triangle_set.triangle_infos);
+        triangle_set.points = denormalize_points(&mut triangle_set.points, &bounds);
         triangles = get_triangles_discarding_holes(&triangle_set, triangles_to_remove);
     } else {
-        denormalize_points(&mut triangle_set.points, &bounds);
+        triangle_set.points = denormalize_points(&mut triangle_set.points, &bounds);
         triangles = get_triangles(&triangle_set);
     }
 
