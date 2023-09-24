@@ -64,10 +64,10 @@ fn add_constrained_edge_to_triangulation(
     triangle_set: &mut TriangleSet,
     endpoint_a_index: usize,
     endpoint_b_index: usize,
-) {
+) -> Result<(), CustomError> {
     // Detects if the edge already exists
     if let Some(_) = triangle_set.find_edge_info_for_triangle(endpoint_a_index, endpoint_b_index) {
-        return;
+        return Ok(());
     }
 
     let edge_endpoint_a = triangle_set.get_point(endpoint_a_index);
@@ -86,7 +86,7 @@ fn add_constrained_edge_to_triangulation(
 
     let mut new_edges = Vec::<EdgeInfo>::new();
 
-    for intersected_triangle_edge in intersected_triangle_edges.iter().rev() {
+    while let Some(intersected_triangle_edge) = intersected_triangle_edges.pop() {
         // 5.3.3: Form quadrilaterals and swap intersected edges
         // Deduces the data for both triangles
         if let Some(current_intersected_triangle_edge) = triangle_set.find_edge_info_for_triangle(
@@ -136,7 +136,7 @@ fn add_constrained_edge_to_triangulation(
                     &index_pair,
                     triangle_set,
                     current_intersected_triangle_edge.edge_index,
-                );
+                )?;
 
                 // Refreshes triangle data after swapping
                 current_triangle_info = triangle_set
@@ -242,11 +242,12 @@ fn add_constrained_edge_to_triangulation(
                         },
                         triangle_set,
                         current_edge.edge_index,
-                    );
+                    )?;
                 }
             }
         }
     }
+    return Ok(());
 }
 
 fn get_supertriangle_triangles(triangle_set: &mut TriangleSet, output_triangles: &mut Vec<usize>) {
