@@ -99,7 +99,7 @@ fn add_constrained_edge_to_triangulation(
             let opposite_triangle_index =
                 current_triangle_info.adjacent_triangle_indices[current_edge_index].unwrap();
             // TODO This should probably be checked for None, I think there are cases it is None.
-            let mut opposite_triangle_info =
+            let opposite_triangle_info =
                 triangle_set.get_triangle_info(opposite_triangle_index);
             let triangle_points =
                 triangle_set.get_triangle(current_intersected_triangle_edge.triangle_index);
@@ -107,15 +107,12 @@ fn add_constrained_edge_to_triangulation(
             // Gets the opposite vertex of adjacent triangle, knowing the first vertex of the shared edge
             let mut opposite_vertex = None;
 
-            let mut opposite_shared_edge_vertex = None;
-
             for j in 0..3 {
                 if opposite_triangle_info.vertex_indices[j]
                     == current_triangle_info.vertex_indices
                         [(current_intersected_triangle_edge.edge_index + 1) % 3]
                 {
                     opposite_vertex = Some(opposite_triangle_info.vertex_indices[(j + 2) % 3]);
-                    opposite_shared_edge_vertex = Some(j);
                     break;
                 }
             }
