@@ -1,5 +1,5 @@
 use crate::{
-    data_structures::{error::CustomError, triangle_set::TriangleSet, vector::Vector},
+    data_structures::{error::CustomError, triangle_set::TriangleSet, vector::Vector, edge_info::EdgeInfo} ,
     normalize::{normalize_points, Bounds},
     triangulation::triangulate_point,
 };
@@ -75,26 +75,21 @@ fn add_constrained_edge_to_triangulation(
         triangle_set.find_triangle_that_contains_edge_start_and_intersects(endpoint_a_index, endpoint_b_index);
 
     // 5.3.2: Get all the triangle edges intersected by the constrained edge
-    triangle_set.get_intersecting_edges(
+    let intersected_triangle_edges = triangle_set.get_intersecting_edges(
         edge_endpoint_a,
         edge_endpoint_b,
         triangle_containing_a,
     );
 
-    let mut new_edges = Vec::<Edge>::new();
+    let mut new_edges = Vec::<EdgeInfo>::new();
 
-    while intersected_triangle_edges.len() > 0 {
-        // TODO HIER WIRD EINE KOPIE ERZEUGT
-        let current_intersected_triangle_edge_vertices =
-            intersected_triangle_edges[intersected_triangle_edges.len() - 1].vertices();
-        intersected_triangle_edges.remove(intersected_triangle_edges.len() - 1);
-
+    for intersected_triangle_edge in intersected_triangle_edges.iter().rev(){
         // 5.3.3: Form quadrilaterals and swap intersected edges
         // Deduces the data for both triangles
         if let Some(current_intersected_triangle_edge) = triangle_set
             .find_triangle_that_contains_edge(
-                current_intersected_triangle_edge_vertices.0,
-                current_intersected_triangle_edge_vertices.1,
+                intersected_triangle_edge.a(),
+                intersected_triangle_edge.b()
             )
         {
             let mut intersected_triangle =

@@ -1,13 +1,10 @@
-use crate::{
-    math_utils::{
-        intersection_between_lines, is_point_to_the_left_of_edge, is_point_to_the_right_of_edge,
-    },
-    triangulation::triangulate_point,
+use crate::math_utils::{
+    intersection_between_lines, is_point_to_the_left_of_edge, is_point_to_the_right_of_edge,
 };
 
 use super::{
-    edge::Edge, edge_info::EdgeInfo, error::CustomError, found_or_added::FoundOrAdded,
-    triangle::Triangle, triangle_info::TriangleInfo, vector::Vector,
+    edge_info::EdgeInfo, error::CustomError, found_or_added::FoundOrAdded, triangle::Triangle,
+    triangle_info::TriangleInfo, vector::Vector,
 };
 
 #[derive(Debug)]
@@ -350,8 +347,8 @@ impl TriangleSet {
         line_endpoint_a: Vector,
         line_endpoint_b: Vector,
         start_triangle: usize,
-    ) -> Vec<Edge> {
-        let mut intersected_triangle_edges = Vec::<Edge>::new();
+    ) -> Vec<EdgeInfo> {
+        let mut intersected_triangle_edges = Vec::<EdgeInfo>::new();
         let mut is_triangle_containing_b_found = false;
         let mut triangle_index = start_triangle;
 
@@ -360,9 +357,10 @@ impl TriangleSet {
             let mut tentative_adjacent_triangle = None;
 
             for i in 0..3 {
-                let current_a = self.points[self.triangle_infos[triangle_index].vertex_indices[i]];
-                let current_b =
-                    self.points[self.triangle_infos[triangle_index].vertex_indices[(i + 1) % 3]];
+                let edge_vertex_a = self.triangle_infos[triangle_index].vertex_indices[i];
+                let edge_vertex_b = self.triangle_infos[triangle_index].vertex_indices[(i + 1) % 3];
+                let current_a = self.points[edge_vertex_a];
+                let current_b = self.points[edge_vertex_b];
 
                 // if one point it the endpoint, then this is the end triangle
                 if current_a == line_endpoint_b || current_b == line_endpoint_b {
@@ -381,7 +379,7 @@ impl TriangleSet {
                     )
                     .is_some()
                     {
-                        intersected_triangle_edges.push(Edge::new(current_a, current_b));
+                        intersected_triangle_edges.push(EdgeInfo::new(triangle_index, i, edge_vertex_a, edge_vertex_b));
 
                         break;
                     }
