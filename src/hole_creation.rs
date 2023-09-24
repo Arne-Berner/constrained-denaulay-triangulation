@@ -1,7 +1,7 @@
 use crate::{
     data_structures::{error::CustomError, triangle_set::TriangleSet, vector::Vector, edge_info::EdgeInfo} ,
     normalize::{normalize_points, Bounds},
-    triangulation::triangulate_point,
+    triangulation::{triangulate_point, swap_edges, TriangleIndexPair}, math_utils::is_quadrilateral_convex,
 };
 
 /// returns triangles to remove
@@ -92,68 +92,67 @@ fn add_constrained_edge_to_triangulation(
                 intersected_triangle_edge.b()
             )
         {
-            let mut intersected_triangle =
-                triangle_set.get_triangle(current_intersected_triangle_edge.triangle_index);
+            let current_triangle_index = current_intersected_triangle_edge.triangle_index;
+            let mut intersected_triangle_info =
+                triangle_set.get_triangle_info(current_triangle_index);
+            let opposite_triangle_index = intersected_triangle_info.adjacent_triangle_indices[current_triangle_index].unwrap();
             // TODO This should probably be checked for None, I think there are cases it is None.
-            let mut opposite_triangle = triangle_set.get_triangle(
-                intersected_triangle.adjacent[current_intersected_triangle_edge.edge_index]
-                    .unwrap(),
+            let mut opposite_triangle_info = triangle_set.get_triangle_info(
+        opposite_triangle_index
             );
             let triangle_points =
-                triangle_set.get_triangle_points(current_intersected_triangle_edge.triangle_index);
+                triangle_set.get_triangle(current_intersected_triangle_edge.triangle_index);
 
-            // Gets the opposite vertex of adjacent triangle, knowing the fisrt vertex of the shared edge
+            // Gets the opposite vertex of adjacent triangle, knowing the first vertex of the shared edge
             let mut opposite_vertex = None;
 
             let mut opposite_shared_edge_vertex = None;
 
             for j in 0..3 {
-                if opposite_triangle.p[j]
-                    == intersected_triangle.p
-                        [(current_intersected_triangle_edge.edge_index + 1) % 3]
+                if opposite_triangle_info.vertex_indices[j]
+                    == intersected_triangle_info.vertex_indices[
+                        (current_intersected_triangle_edge.edge_index + 1) % 3]
                 {
-                    opposite_vertex = Some(opposite_triangle.p[(j + 2) % 3]);
+                    opposite_vertex = Some(opposite_triangle_info.vertex_indices[(j + 2) % 3]);
                     opposite_shared_edge_vertex = Some(j);
                     break;
                 }
             }
 
-            let opposite_point = triangle_set.get_point_from_index(opposite_vertex.unwrap());
+            let opposite_point = &triangle_set.get_point(opposite_vertex.unwrap());
 
-            if math_utils::is_quadrilateral_convex(
-                triangle_points.p0,
-                triangle_points.p1,
-                triangle_points.p2,
+            if is_quadrilateral_convex(
+                &triangle_points.p(0),
+                &triangle_points.p(1),
+                &triangle_points.p(2),
                 opposite_point,
             ) {
                 // Swap
+                let index_pair = TriangleIndexPair{adjacent: opposite_triangle_index, current: current_triangle_index};
                 let not_in_edge_triangle_vertex =
                     (current_intersected_triangle_edge.edge_index + 2) % 3;
-                DelaunayTriangulation::swap_edges(
+                    // TODO This could fail, since it was written for the triangulation
+                swap_edges(
+                    &index_pair,
                     triangle_set,
-                    current_intersected_triangle_edge.triangle_index,
-                    &mut intersected_triangle,
-                    not_in_edge_triangle_vertex,
-                    &mut opposite_triangle,
-                    opposite_shared_edge_vertex.unwrap(),
                 );
 
                 // Refreshes triangle data after swapping
-                intersected_triangle =
+                intersected_triangle_info =
                     triangle_set.get_triangle(current_intersected_triangle_edge.triangle_index);
 
                 // Check new diagonal against the intersecting edge
                 let new_triangle_shared_edge_vertex =
                     (current_intersected_triangle_edge.edge_index + 2) % 3;
                 let new_triangle_shared_point_a = triangle_set
-                    .get_point_from_index(intersected_triangle.p[new_triangle_shared_edge_vertex]);
+                    .get_point_from_index(intersected_triangle_info.p[new_triangle_shared_edge_vertex]);
                 let new_triangle_shared_point_b = triangle_set.get_point_from_index(
-                    intersected_triangle.p[(new_triangle_shared_edge_vertex + 1) % 3],
+                    intersected_triangle_info.p[(new_triangle_shared_edge_vertex + 1) % 3],
                 );
 
                 let new_edge = Edge::new(
-                    intersected_triangle.p[new_triangle_shared_edge_vertex],
-                    intersected_triangle.p[(new_triangle_shared_edge_vertex + 1) % 3],
+                    intersected_triangle_info.p[new_triangle_shared_edge_vertex],
+                    intersected_triangle_info.p[(new_triangle_shared_edge_vertex + 1) % 3],
                 );
 
                 if let Some(_) = math_utils::intersection_between_lines(

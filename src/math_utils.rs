@@ -202,14 +202,14 @@ pub fn intersection_between_lines(
 }
 
 // TODO this is never used
-pub fn is_triangle_vertices_cw(point0: Vector, point1: Vector, point2: Vector) -> bool {
+pub fn is_triangle_vertices_cw(point0: &Vector, point1: &Vector, point2: &Vector) -> bool {
     calculate_matrix3x3_determinant(
         point0.x, point0.y, 1.0, point1.x, point1.y, 1.0, point2.x, point2.y, 1.0,
     ) < 0.0
 }
 
 // TODO this is never used
-pub fn is_quadrilateral_convex(a: Vector, b: Vector, c: Vector, d: Vector) -> bool {
+pub fn is_quadrilateral_convex(a: &Vector, b: &Vector, c: &Vector, d: &Vector) -> bool {
     let abc = is_triangle_vertices_cw(a, b, c);
     let abd = is_triangle_vertices_cw(a, b, d);
     let bcd = is_triangle_vertices_cw(b, c, d);

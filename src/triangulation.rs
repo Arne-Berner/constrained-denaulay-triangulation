@@ -8,7 +8,7 @@ use crate::{
     normalize::{self, normalize_points, Bounds, denormalize_points}, hole_creation::create_holes,
 };
 
-struct TriangleIndexPair {
+pub struct TriangleIndexPair {
     pub adjacent: usize,
     pub current: usize,
 }
@@ -310,7 +310,7 @@ pub fn triangulate_point(
     }
 }
 
-fn swap_edges(
+pub fn swap_edges(
     index_pair: &TriangleIndexPair,
     triangle_set: &mut TriangleSet,
 ) -> Result<(Option<usize>, Option<usize>), CustomError> {
