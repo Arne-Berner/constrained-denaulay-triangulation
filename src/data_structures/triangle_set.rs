@@ -1,8 +1,13 @@
-use crate::{math_utils::{is_point_to_the_right_of_edge, is_point_to_the_left_of_edge, intersection_between_lines}, triangulation::triangulate_point};
+use crate::{
+    math_utils::{
+        intersection_between_lines, is_point_to_the_left_of_edge, is_point_to_the_right_of_edge,
+    },
+    triangulation::triangulate_point,
+};
 
 use super::{
-    edge_info::EdgeInfo, error::CustomError, found_or_added::FoundOrAdded, triangle::Triangle,
-    triangle_info::TriangleInfo, vector::Vector, edge::Edge,
+    edge::Edge, edge_info::EdgeInfo, error::CustomError, found_or_added::FoundOrAdded,
+    triangle::Triangle, triangle_info::TriangleInfo, vector::Vector,
 };
 
 #[derive(Debug)]
@@ -315,28 +320,23 @@ impl TriangleSet {
 
         for i in 0..triangles_with_endpoint.len() {
             let mut vertex_position_in_triangle;
-            for j in 0..3{
-                if self.triangle_infos[triangles_with_endpoint[i]].vertex_indices[j] == endpoint_a_index{
+            for j in 0..3 {
+                if self.triangle_infos[triangles_with_endpoint[i]].vertex_indices[j]
+                    == endpoint_a_index
+                {
                     vertex_position_in_triangle = j;
                     break;
                 }
-
             }
-            let triangle_edge_point1 = self.points[self.triangle_infos[
-                triangles_with_endpoint[i]].vertex_indices[(vertex_position_in_triangle + 1) % 3]];
-            let triangle_edge_point2 = self.points[self.triangle_infos[
-                triangles_with_endpoint[i]].vertex_indices[(vertex_position_in_triangle + 2) % 3]];
+            let triangle_edge_point1 = self.points[self.triangle_infos[triangles_with_endpoint[i]]
+                .vertex_indices[(vertex_position_in_triangle + 1) % 3]];
+            let triangle_edge_point2 = self.points[self.triangle_infos[triangles_with_endpoint[i]]
+                .vertex_indices[(vertex_position_in_triangle + 2) % 3]];
 
             // Is the line in the angle between the 2 contiguous edges of the triangle?
-            if is_point_to_the_left_of_edge(
-                &endpoint_a,
-                &triangle_edge_point1,
-                &endpoint_b,
-            ) && is_point_to_the_left_of_edge(
-                &triangle_edge_point2,
-                &endpoint_a,
-                &endpoint_b,
-            ) {
+            if is_point_to_the_left_of_edge(&endpoint_a, &triangle_edge_point1, &endpoint_b)
+                && is_point_to_the_left_of_edge(&triangle_edge_point2, &endpoint_a, &endpoint_b)
+            {
                 found_triangle = Some(triangles_with_endpoint[i]);
                 break;
             }
@@ -350,8 +350,8 @@ impl TriangleSet {
         line_endpoint_a: Vector,
         line_endpoint_b: Vector,
         start_triangle: usize,
-    ) -> Vec<Edge>{
-    let mut intersected_triangle_edges = Vec::<Edge>::new();
+    ) -> Vec<Edge> {
+        let mut intersected_triangle_edges = Vec::<Edge>::new();
         let mut is_triangle_containing_b_found = false;
         let mut triangle_index = start_triangle;
 
@@ -361,22 +361,16 @@ impl TriangleSet {
 
             for i in 0..3 {
                 let current_a = self.points[self.triangle_infos[triangle_index].vertex_indices[i]];
-                let current_b = self.points[self.triangle_infos[triangle_index].vertex_indices[(i+1)%3]];
+                let current_b =
+                    self.points[self.triangle_infos[triangle_index].vertex_indices[(i + 1) % 3]];
 
                 // if one point it the endpoint, then this is the end triangle
-                if current_a == line_endpoint_b
-                    || current_b
-                        == line_endpoint_b
-                {
+                if current_a == line_endpoint_b || current_b == line_endpoint_b {
                     is_triangle_containing_b_found = true;
                     break;
                 }
 
-                if is_point_to_the_right_of_edge(
-                    &current_a,
-                    &current_b,
-                    &line_endpoint_b,
-                ) {
+                if is_point_to_the_right_of_edge(&current_a, &current_b, &line_endpoint_b) {
                     tentative_adjacent_triangle = Some(i);
 
                     if let Some(_) = intersection_between_lines(
@@ -385,16 +379,7 @@ impl TriangleSet {
                         line_endpoint_a,
                         line_endpoint_b,
                     ) {
-                        has_crossed_edge = true;
-
-                        intersected_triangle_edges.push(Edge::new(
-                            current_a,
-                            current_b
-                        ));
-
-                        // TODO might need some handling, but would change the searching here
-                        // would need a stack
-                        triangle_index = self.triangle_infos[triangle_index].adjacent_triangle_indices[i].unwrap();
+                        intersected_triangle_edges.push(Edge::new(current_a, current_b));
 
                         break;
                     }
@@ -402,11 +387,11 @@ impl TriangleSet {
             }
 
             // Continue searching at a different adjacent triangle
-            if !has_crossed_edge {
-                triangle_index = self.adjacent_triangles
-                    [triangle_index * 3 + tentative_adjacent_triangle.unwrap()]
-                .unwrap();
-            }
+            // TODO might need some handling, but would change the searching here
+            // would need a stack
+            triangle_index = self.triangle_infos[triangle_index].adjacent_triangle_indices
+                [tentative_adjacent_triangle.unwrap()]
+            .unwrap();
         }
         intersected_triangle_edges
     }
