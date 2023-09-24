@@ -45,9 +45,9 @@ pub fn calculate_matrix3x3_determinant(
 ///
 /// `true` if the point is on the right side; `false` if the point is on the left side or is contained in the edge.
 pub fn is_point_to_the_right_of_edge(
-    edge_endpoint_a: Vector,
-    edge_endpoint_b: Vector,
-    point: Vector,
+    edge_endpoint_a: &Vector,
+    edge_endpoint_b: &Vector,
+    point: &Vector,
 ) -> bool {
     let p1 = edge_endpoint_b.x - edge_endpoint_a.x;
     let p2 = point.y - edge_endpoint_a.y;
@@ -69,9 +69,9 @@ pub fn is_point_to_the_right_of_edge(
 ///
 /// `true` if the point is on the left side; `false` if the point is on the right side or is contained in the edge.
 pub fn is_point_to_the_left_of_edge(
-    edge_endpoint_a: Vector,
-    edge_endpoint_b: Vector,
-    point: Vector,
+    edge_endpoint_a: &Vector,
+    edge_endpoint_b: &Vector,
+    point: &Vector,
 ) -> bool {
     !is_point_to_the_right_of_edge(edge_endpoint_a, edge_endpoint_b, point)
 }
@@ -89,10 +89,10 @@ pub fn is_point_to_the_left_of_edge(
 ///
 /// Returns true if the point is contained in the triangle; false otherwise.
 pub fn is_point_inside_triangle(
-    triangle_p0: Vector,
-    triangle_p1: Vector,
-    triangle_p2: Vector,
-    point_to_check: Vector,
+    triangle_p0: &Vector,
+    triangle_p1: &Vector,
+    triangle_p2: &Vector,
+    point_to_check: &Vector,
 ) -> bool {
     is_point_to_the_left_of_edge(triangle_p0, triangle_p1, point_to_check)
         && is_point_to_the_left_of_edge(triangle_p1, triangle_p2, point_to_check)

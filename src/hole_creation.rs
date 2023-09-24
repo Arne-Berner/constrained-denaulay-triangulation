@@ -75,12 +75,10 @@ fn add_constrained_edge_to_triangulation(
         triangle_set.find_triangle_that_contains_edge_start_and_intersects(endpoint_a_index, endpoint_b_index);
 
     // 5.3.2: Get all the triangle edges intersected by the constrained edge
-    let mut intersected_triangle_edges = Vec::<Edge>::new();
     triangle_set.get_intersecting_edges(
         edge_endpoint_a,
         edge_endpoint_b,
         triangle_containing_a,
-        &mut intersected_triangle_edges,
     );
 
     let mut new_edges = Vec::<Edge>::new();

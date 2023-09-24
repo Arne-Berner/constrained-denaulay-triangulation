@@ -6,3 +6,4 @@ pub mod triangle_set;
 pub mod triangle;
 pub mod vector;
 pub mod edge_info;
+pub mod edge;
