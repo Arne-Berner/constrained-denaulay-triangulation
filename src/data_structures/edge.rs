@@ -1,3 +1,5 @@
+use super::vector::Vector;
+
 pub struct Edge {
     edge_start: Vector,
     edge_end: Vector,
