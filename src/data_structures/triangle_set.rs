@@ -9,8 +9,6 @@ use super::{
 pub struct TriangleSet {
     pub points: Vec<Vector>,
     pub triangle_infos: Vec<TriangleInfo>,
-    vertex_indices: Vec<usize>,
-    adjacent_indices: Vec<usize>,
 }
 
 impl TriangleSet {
