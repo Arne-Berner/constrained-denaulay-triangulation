@@ -102,7 +102,6 @@ pub fn triangulate(
             match triangulate_point(&mut triangle_set, *point) {
                 Ok(_) => (),
                 Err(e) => {
-                    println!("\n\n{:#?}\n\n{:#?}", triangle_set, point);
                     return Err(e);
                 }
             }
@@ -215,10 +214,6 @@ pub fn triangulate_point(
             containing_triangle.adjacent_triangle_indices[0], // the originals adjacent
             Some(containing_triangle_index), // this is the original triangle, that will get changed a bit
         );
-        // println!(
-        //     "\n\n\ntriangle count: {:?}\n\n\n",
-        //     triangle_set.triangle_count()
-        // );
         let first_triangle_index = triangle_set.add_triangle_info(first_triangle);
 
         let second_triangle = TriangleInfo::new([
