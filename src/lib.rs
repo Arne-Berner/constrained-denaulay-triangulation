@@ -1,7 +1,7 @@
 #[warn(missing_docs)]
 // do they need pub use?
-use data_structures::vector::Vector;
-use data_structures::{error::CustomError, triangle::Triangle};
+pub use data_structures::vector::Vector;
+pub use data_structures::{error::CustomError, triangle::Triangle};
 
 mod triangulation;
 mod data_structures;
