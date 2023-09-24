@@ -118,7 +118,7 @@ pub fn triangulate(
         triangles = get_triangles_discarding_holes(&triangle_set, triangles_to_remove);
     } else {
         let mut triangles_to_remove = Vec::new();
-        get_supertriangle_triangles(&mut triangle_set, &mut triangles_to_remove);
+        //get_supertriangle_triangles(&mut triangle_set, &mut triangles_to_remove);
         triangle_set.points = denormalize_points(&mut triangle_set.points, &bounds);
         triangles_to_remove.sort();
         triangles = get_triangles_discarding_holes(&triangle_set, triangles_to_remove);
@@ -291,9 +291,9 @@ pub fn triangulate_point(
                     swap_edges(&index_pair, triangle_set, 1)
                 {
                     // 7.3 push new adjacents on stack
-                    if let Some(new_oppositve_index) = first_new_adjacent {
+                    if let Some(new_opposite_index) = first_new_adjacent {
                         index_pairs.push(TriangleIndexPair::new(
-                            new_oppositve_index,
+                            new_opposite_index,
                             index_pair.current,
                         ))
                     }
