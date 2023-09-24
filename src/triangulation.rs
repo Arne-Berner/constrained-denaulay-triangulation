@@ -114,14 +114,13 @@ pub fn triangulate(
     let triangles;
     if let Some(holes) = holes {
         let triangles_to_remove = create_holes(&mut triangle_set, holes, bounds)?;
-        println!("triangle set triangle infos:{:#?}", triangle_set.triangle_infos);
         triangle_set.points = denormalize_points(&mut triangle_set.points, &bounds);
         triangles = get_triangles_discarding_holes(&triangle_set, triangles_to_remove);
     } else {
         triangle_set.points = denormalize_points(&mut triangle_set.points, &bounds);
-        println!("points :{:#?}",triangle_set.points);
         let mut triangles_to_remove = Vec::new();
         get_supertriangle_triangles(&mut triangle_set, &mut triangles_to_remove);
+        triangles_to_remove.sort();
         triangles = get_triangles_discarding_holes(&triangle_set, triangles_to_remove);
     }
 
@@ -399,14 +398,17 @@ fn get_triangles_discarding_holes(
 
     // Output filtering
     let mut idxs_i = 0;
+
     for (idx, triangle_info) in triangle_set.triangle_infos.iter().enumerate() {
         if !(triangles_to_remove.get(idxs_i) == Some(&idx)) {
-            idxs_i += 1;
             output_triangles.push(Triangle::new(
                 triangle_set.get_point(triangle_info.vertex_indices[0]),
                 triangle_set.get_point(triangle_info.vertex_indices[1]),
                 triangle_set.get_point(triangle_info.vertex_indices[2]),
             ));
+        } else {
+            idxs_i += 1;
+
         }
     }
     output_triangles

@@ -258,7 +258,6 @@ pub fn get_supertriangle_triangles(triangle_set: &mut TriangleSet, output_triang
     for i in 0..3 {
         // Vertices of the supertriangle
         let triangles_that_share_vertex = triangle_set.get_triangle_indices_with_vertex(i);
-        println!("triangles that share vertex:{:#?}",triangles_that_share_vertex);
 
 
         for j in 0..triangles_that_share_vertex.len() {
@@ -268,4 +267,5 @@ pub fn get_supertriangle_triangles(triangle_set: &mut TriangleSet, output_triang
             }
         }
     }
+
 }
