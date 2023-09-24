@@ -4,8 +4,9 @@ use crate::{
         error::CustomError, found_or_added::FoundOrAdded, point_bin_grid::PointBinGrid,
         triangle::Triangle, triangle_info::TriangleInfo, triangle_set::TriangleSet, vector::Vector,
     },
+    hole_creation::create_holes,
     math_utils::is_point_inside_circumcircle,
-    normalize::{self, normalize_points, Bounds, denormalize_points}, hole_creation::create_holes, 
+    normalize::{self, denormalize_points, normalize_points, Bounds},
 };
 
 pub struct TriangleIndexPair {
@@ -65,7 +66,7 @@ impl TriangleIndexPair {
 /// The triangulation might panic if the holes are 50x the size of the polygon to be triangulated.
 pub fn triangulate(
     input_points: &mut Vec<Vector>,
-    holes:  Option<&mut Vec<Vec<Vector>>>,
+    holes: Option<&mut Vec<Vec<Vector>>>,
     maximum_triangle_area: Option<f32>,
 ) -> Result<Vec<Triangle>, CustomError> {
     // Initialize containers
@@ -110,12 +111,18 @@ pub fn triangulate(
     if let Some(maximum_triangle_area) = maximum_triangle_area {
         tesselate(&mut triangle_set, maximum_triangle_area)?;
     }
-    if let Some(holes) = holes {
-        create_holes(&mut triangle_set, holes, bounds);
-    }
-    denormalize_points(&mut triangle_set.points, &bounds);
 
-    return Ok((triangle_set, bounds));
+    let triangles;
+    if let Some(holes) = holes {
+        let triangles_to_remove = create_holes(&mut triangle_set, holes, bounds)?;
+        denormalize_points(&mut triangle_set.points, &bounds);
+        triangles = get_triangles_discarding_holes(&triangle_set, triangles_to_remove);
+    } else {
+        denormalize_points(&mut triangle_set.points, &bounds);
+        triangles = get_triangles(&triangle_set);
+    }
+
+    return Ok(triangles);
 }
 
 fn tesselate(
@@ -174,7 +181,6 @@ fn tesselate(
     }
     return Ok(());
 }
-
 
 pub fn triangulate_point(
     triangle_set: &mut TriangleSet,
@@ -338,7 +344,7 @@ pub fn swap_edges(
         // Assumption
         current_info.vertex_indices[(shared_vertex_index + 2) % 3],
         opposite_vertex,
-            current_info.vertex_indices[(shared_vertex_index + 1) % 3],
+        current_info.vertex_indices[(shared_vertex_index + 1) % 3],
     ])
     .with_adjacent(
         Some(index_pair.current),
@@ -348,14 +354,16 @@ pub fn swap_edges(
     triangle_set.replace_triangle(index_pair.adjacent, &new_adjacent);
     triangle_set.replace_vertex_with_vertex(index_pair.current, 2, opposite_vertex);
     let new_adjacent_indices = [
-            current_info.adjacent_triangle_indices[(shared_vertex_index + 2) % 3],
+        current_info.adjacent_triangle_indices[(shared_vertex_index + 2) % 3],
         first_new_adjacent,
         Some(index_pair.adjacent),
     ];
     triangle_set.replace_adjacent_vertices(index_pair.current, new_adjacent_indices);
 
     // change the adjacent triangles of the changed adjacent triangles
-    if let Some(needs_replacement_index) = current_info.adjacent_triangle_indices[(shared_vertex_index + 2) % 3] {
+    if let Some(needs_replacement_index) =
+        current_info.adjacent_triangle_indices[(shared_vertex_index + 2) % 3]
+    {
         triangle_set.replace_adjacent(
             needs_replacement_index,
             Some(index_pair.current),
@@ -370,4 +378,37 @@ pub fn swap_edges(
         );
     }
     Ok((first_new_adjacent, second_new_adjacent))
+}
+
+fn get_triangles(triangle_set: &TriangleSet) -> Vec<Triangle> {
+    let mut output_triangles = Vec::with_capacity(triangle_set.triangle_count() - 1);
+    for triangle_info in &triangle_set.triangle_infos {
+        output_triangles.push(Triangle::new(
+            triangle_set.get_point(triangle_info.vertex_indices[0]),
+            triangle_set.get_point(triangle_info.vertex_indices[1]),
+            triangle_set.get_point(triangle_info.vertex_indices[2]),
+        ))
+    }
+    output_triangles
+}
+
+fn get_triangles_discarding_holes(
+    triangle_set: &TriangleSet,
+    triangles_to_remove: Vec<usize>,
+) -> Vec<Triangle> {
+    let mut output_triangles = Vec::with_capacity(triangle_set.triangle_count() - 1);
+
+    // Output filtering
+    let mut idxs_i = 0;
+    for (idx, triangle_info) in triangle_set.triangle_infos.iter().enumerate() {
+        if !(triangles_to_remove.get(idxs_i) == Some(&idx)) {
+            idxs_i += 1;
+            output_triangles.push(Triangle::new(
+                triangle_set.get_point(triangle_info.vertex_indices[0]),
+                triangle_set.get_point(triangle_info.vertex_indices[1]),
+                triangle_set.get_point(triangle_info.vertex_indices[2]),
+            ));
+        }
+    }
+    output_triangles
 }

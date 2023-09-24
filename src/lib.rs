@@ -27,11 +27,11 @@ mod hole_creation;
 /// input_points.push(Vector::new(1., -2.));
 /// input_points.push(Vector::new(-6., -4.));
 /// input_points.push(Vector::new(5., -4.));
-/// let (triangle_set, bounds) = match triangulation::triangulate(&mut input_points, None, None){
+/// let triangles = match triangulate(&mut input_points, None, None){
 ///     Ok(result) => result,
 ///     Err(err) => panic!("triangulation failed!{:?}", err),
 /// };
-/// assert!(triangle_set.triangle_count() > 0);
+/// assert!(triangle.len() > 0);
 /// ```
 /// Even more complex are no problem either. (such as with collinear lines to the super triangle and each other.)
 /// ```
@@ -44,14 +44,14 @@ mod hole_creation;
 /// input_points.push(Vector::new(-1., -1.));
 /// input_points.push(Vector::new(-2.,-3.));
 /// input_points.push(Vector::new(4.,-2.));
-/// let (triangle_set, bounds) = match triangulation::triangulate(&mut input_points, None, None){
+/// let triangles = match triangulate(&mut input_points, None, None){
 ///     Ok(result) => result,
 ///     Err(err) => panic!("triangulation failed!{:?}", err),
 /// };
-/// assert!(triangle_set.triangle_count() > 0);
+/// assert!(triangles.len() > 0);
 /// ```
 /// # Panics
 /// The triangulation might panic if the holes are 50x the size of the polygon to be triangulated.
 pub fn triangulate(input_points:&mut Vec<Vector>, holes:Option<&mut Vec<Vec<Vector>>>, maximum_triangle_area:Option<f32>)-> Result<Vec<Triangle>, CustomError> {
-    triangulation::triangulate(input_points, holes, maximum_triangle_area)?
+    Ok(triangulation::triangulate(input_points, holes, maximum_triangle_area)?)
 }
