@@ -1,3 +1,5 @@
+use std::collections::VecDeque;
+
 use crate::{
     data_structures::{
         edge_info::EdgeInfo, error::CustomError, triangle_set::TriangleSet, vector::Vector,
@@ -78,15 +80,17 @@ fn add_constrained_edge_to_triangulation(
         .find_triangle_that_contains_edge_start_and_intersects(endpoint_a_index, endpoint_b_index);
 
     // 5.3.2: Get all the triangle edges intersected by the constrained edge
+    // TODO rewrite to VecDeque and use push front instead of insert 0?
     let mut intersected_triangle_edges = triangle_set.get_intersecting_edges(
         edge_endpoint_a,
         edge_endpoint_b,
         triangle_containing_a,
     );
+    let mut intersected_triangle_edges = VecDeque::from(intersected_triangle_edges);
 
     let mut new_edges = Vec::<EdgeInfo>::new();
 
-    while let Some(intersected_triangle_edge) = intersected_triangle_edges.pop() {
+    while let Some(intersected_triangle_edge) = intersected_triangle_edges.pop_back() {
         // 5.3.3: Form quadrilaterals and swap intersected edges
         // Deduces the data for both triangles
         if let Some(current_intersected_triangle_edge) = triangle_set.find_edge_info_for_triangle(
@@ -171,13 +175,13 @@ fn add_constrained_edge_to_triangulation(
                         && new_triangle_shared_point_b != edge_endpoint_a
                     {
                         // New triangles edge still intersects with the constrained edge, so it is returned to the list
-                        intersected_triangle_edges.insert(0, new_edge);
+                        intersected_triangle_edges.push_front(new_edge);
                     } else {
                         new_edges.push(new_edge);
                     }
                 } else {
                     // Back to the list
-                    intersected_triangle_edges.insert(0, current_intersected_triangle_edge);
+                    intersected_triangle_edges.push_front(current_intersected_triangle_edge);
                 }
             }
         }

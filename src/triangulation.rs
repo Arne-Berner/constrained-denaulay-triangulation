@@ -67,7 +67,7 @@ pub fn triangulate(
     input_points: &mut Vec<Vector>,
     holes:  Option<&mut Vec<Vec<Vector>>>,
     maximum_triangle_area: Option<f32>,
-) -> Result<(TriangleSet, Bounds), CustomError> {
+) -> Result<Vec<Triangle>, CustomError> {
     // Initialize containers
     let mut triangle_set = TriangleSet::new(input_points.len() - 2);
 
