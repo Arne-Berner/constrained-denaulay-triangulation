@@ -373,12 +373,14 @@ impl TriangleSet {
                 if is_point_to_the_right_of_edge(&current_a, &current_b, &line_endpoint_b) {
                     tentative_adjacent_triangle = Some(i);
 
-                    if let Some(_) = intersection_between_lines(
+                    if intersection_between_lines(
                         current_a,
                         current_b,
                         line_endpoint_a,
                         line_endpoint_b,
-                    ) {
+                    )
+                    .is_some()
+                    {
                         intersected_triangle_edges.push(Edge::new(current_a, current_b));
 
                         break;
@@ -389,9 +391,13 @@ impl TriangleSet {
             // Continue searching at a different adjacent triangle
             // TODO might need some handling, but would change the searching here
             // would need a stack
-            triangle_index = self.triangle_infos[triangle_index].adjacent_triangle_indices
-                [tentative_adjacent_triangle.unwrap()]
-            .unwrap();
+            if let Some(tentative_adjacent_triangle) = tentative_adjacent_triangle {
+                triangle_index = self.triangle_infos[triangle_index].adjacent_triangle_indices
+                    [tentative_adjacent_triangle]
+                    .expect("This would result in an endless loop");
+            } else {
+                panic!("This results in an endless loop!")
+            }
         }
         intersected_triangle_edges
     }

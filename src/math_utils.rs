@@ -129,19 +129,7 @@ pub fn is_point_inside_circumcircle(triangle: Triangle, point_to_check: Vector) 
     false
 }
 
-/// Calculates whether 2 line segments intersect and the intersection point.
-///
-/// # Arguments
-///
-/// * `endpointA1` - The first point of the first segment.
-/// * `endpointB1` - The second point of the first segment.
-/// * `endpointA2` - The first point of the second segment.
-/// * `endpointB2` - The second point of the second segment.
-/// * `intersectionPoint` - The intersection point, if any.
-///
-/// # Returns
-///
-/// Returns true if the line segments intersect; false otherwise.
+/// Calculates whether 2 line segments intersect and returns the intersection point.
 pub fn intersection_between_lines(
     endpoint_a1: Vector,
     endpoint_b1: Vector,
