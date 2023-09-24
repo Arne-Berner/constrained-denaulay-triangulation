@@ -404,4 +404,11 @@ impl TriangleSet {
         }
         intersected_triangle_edges
     }
+    fn get_triangle_from_triangle_index(&self, triangle_index: usize)-> Triangle{
+        Triangle::new(
+            self.points[self.triangle_infos[triangle_index].vertex_indices[0]],
+            self.points[self.triangle_infos[triangle_index].vertex_indices[1]],
+            self.points[self.triangle_infos[triangle_index].vertex_indices[2]]
+        )
+    }
 }
