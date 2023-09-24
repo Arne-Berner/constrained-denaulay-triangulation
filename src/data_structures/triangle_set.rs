@@ -251,11 +251,12 @@ impl TriangleSet {
                 continue;
             }
             for i in 0..3 {
-                let adjacent_to_adjacent_triangle = self.triangle_infos[adjacent_triangle_index]
-                    .adjacent_triangle_indices[i]
-                    .unwrap();
-                if !triangles_to_remove.contains(&adjacent_to_adjacent_triangle) {
-                    adjacent_triangle_indices.push(adjacent_to_adjacent_triangle);
+                if let Some(adjacent_to_adjacent_triangle) =
+                    self.triangle_infos[adjacent_triangle_index].adjacent_triangle_indices[i]
+                {
+                    if !triangles_to_remove.contains(&adjacent_to_adjacent_triangle) {
+                        adjacent_triangle_indices.push(adjacent_to_adjacent_triangle);
+                    }
                 }
             }
 
