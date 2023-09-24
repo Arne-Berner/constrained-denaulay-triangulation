@@ -316,19 +316,19 @@ impl TriangleSet {
         let endpoint_b = self.points[endpoint_b_index];
 
         for i in 0..triangles_with_endpoint.len() {
-            let mut vertex_position_in_triangle;
+            let mut vertex_position_in_triangle = None;
             for j in 0..3 {
                 if self.triangle_infos[triangles_with_endpoint[i]].vertex_indices[j]
                     == endpoint_a_index
                 {
-                    vertex_position_in_triangle = j;
+                    vertex_position_in_triangle = Some(j);
                     break;
                 }
             }
             let triangle_edge_point1 = self.points[self.triangle_infos[triangles_with_endpoint[i]]
-                .vertex_indices[(vertex_position_in_triangle + 1) % 3]];
+                .vertex_indices[(vertex_position_in_triangle.unwrap() + 1) % 3]];
             let triangle_edge_point2 = self.points[self.triangle_infos[triangles_with_endpoint[i]]
-                .vertex_indices[(vertex_position_in_triangle + 2) % 3]];
+                .vertex_indices[(vertex_position_in_triangle.unwrap() + 2) % 3]];
 
             // Is the line in the angle between the 2 contiguous edges of the triangle?
             if is_point_to_the_left_of_edge(&endpoint_a, &triangle_edge_point1, &endpoint_b)
