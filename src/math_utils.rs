@@ -101,32 +101,48 @@ pub fn is_point_inside_triangle(
 
 // https://gamedev.stackexchange.com/questions/71328/how-can-i-add-and-subtract-convex-polygons
 pub fn is_point_inside_circumcircle(triangle: Triangle, point_to_check: Vector) -> bool {
-    // sloan algorithm
-    let x02 = triangle.p(0).x - triangle.p(2).x;
-    let x12 = triangle.p(1).x - triangle.p(2).x;
-    let x0p = triangle.p(0).x - point_to_check.x;
-    let x1p = triangle.p(1).x - point_to_check.x;
-    let y02 = triangle.p(0).y - triangle.p(2).y;
-    let y12 = triangle.p(1).y - triangle.p(2).y;
-    let y0p = triangle.p(0).y - point_to_check.y;
-    let y1p = triangle.p(1).y - point_to_check.y;
+			// This first part will simplify how we calculate the determinant
+			let a = triangle.p(0).x - point_to_check.x;
+			let d = triangle.p(1).x - point_to_check.x;
+			let g = triangle.p(2).x - point_to_check.x;
 
-    let cosa = x02 * x12 + y02 * y12;
-    let cosb = x0p * x1p + y0p * y1p;
+			let b = triangle.p(0).y - point_to_check.y;
+			let e = triangle.p(1).y - point_to_check.y;
+			let h = triangle.p(2).y - point_to_check.y;
 
-    if cosa >= 0. && cosb >= 0. {
-        return false;
-    }
-    if cosa < 0. && cosb < 0. {
-        return true;
-    }
+			let c = a * a + b * b;
+			let f = d * d + e * e;
+			let i = g * g + h * h;
 
-    let sina = x02 * y12 - x12 * y02;
-    let sinb = x1p * y0p - x0p * y1p;
-    if sina * cosb + sinb * cosa < 0. {
-        return true;
-    }
-    false
+			let determinant = (a * e * i) + (b * f * g) + (c * d * h) - (g * e * c) - (h * f * a) - (i * d * b);
+
+			return determinant >= 0.; // zero means on the perimeter
+//    // sloan algorithm
+//    let x02 = triangle.p(0).x - triangle.p(2).x;
+//    let x12 = triangle.p(1).x - triangle.p(2).x;
+//    let x0p = triangle.p(0).x - point_to_check.x;
+//    let x1p = triangle.p(1).x - point_to_check.x;
+//    let y02 = triangle.p(0).y - triangle.p(2).y;
+//    let y12 = triangle.p(1).y - triangle.p(2).y;
+//    let y0p = triangle.p(0).y - point_to_check.y;
+//    let y1p = triangle.p(1).y - point_to_check.y;
+//
+//    let cosa = x02 * x12 + y02 * y12;
+//    let cosb = x0p * x1p + y0p * y1p;
+//
+//    if cosa >= 0. && cosb >= 0. {
+//        return false;
+//    }
+//    if cosa < 0. && cosb < 0. {
+//        return true;
+//    }
+//
+//    let sina = x02 * y12 - x12 * y02;
+//    let sinb = x1p * y0p - x0p * y1p;
+//    if sina * cosb + sinb * cosa < 0. {
+//        return true;
+//    }
+//    false
 }
 
 /// Calculates whether 2 line segments intersect and returns the intersection point.
