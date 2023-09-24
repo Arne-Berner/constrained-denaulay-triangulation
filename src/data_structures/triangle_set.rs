@@ -173,15 +173,16 @@ impl TriangleSet {
                 polygon_outline[(outline_index + 1) % polygon_outline.len()],
             ) {
                 // A triangle may form a corner, with 2 consecutive outline edges. This avoids adding it twice
-                let last_added_triangle = triangles_to_remove[triangles_to_remove.len() - 1];
-                let first_added_triangle = triangles_to_remove[0];
                 let current_triangle = edge_in_triangle.triangle_index;
                 let current_edge = edge_in_triangle.edge_index;
-                if triangles_to_remove.len() > 0
-                    && (last_added_triangle == current_triangle
-                        || first_added_triangle == current_triangle)
-                {
-                    continue;
+                if triangles_to_remove.len() > 0 {
+                    let last_added_triangle = triangles_to_remove[triangles_to_remove.len() - 1];
+                    let first_added_triangle = triangles_to_remove[0];
+                    if (last_added_triangle == current_triangle)
+                        || (first_added_triangle == current_triangle)
+                    {
+                        continue;
+                    }
                 }
 
                 triangles_to_remove.push(edge_in_triangle.triangle_index);
@@ -250,7 +251,6 @@ impl TriangleSet {
                 continue;
             }
             for i in 0..3 {
-                // TODO this unwrap should not cause a panic, but what would be an appropriate error message?
                 let adjacent_to_adjacent_triangle = self.triangle_infos[adjacent_triangle_index]
                     .adjacent_triangle_indices[i]
                     .unwrap();
@@ -400,11 +400,11 @@ impl TriangleSet {
         }
         intersected_triangle_edges
     }
-    fn get_triangle_from_triangle_index(&self, triangle_index: usize)-> Triangle{
+    fn get_triangle_from_triangle_index(&self, triangle_index: usize) -> Triangle {
         Triangle::new(
             self.points[self.triangle_infos[triangle_index].vertex_indices[0]],
             self.points[self.triangle_infos[triangle_index].vertex_indices[1]],
-            self.points[self.triangle_infos[triangle_index].vertex_indices[2]]
+            self.points[self.triangle_infos[triangle_index].vertex_indices[2]],
         )
     }
 }

@@ -117,9 +117,8 @@ pub fn triangulate(
         triangle_set.points = denormalize_points(&mut triangle_set.points, &bounds);
         triangles = get_triangles_discarding_holes(&triangle_set, triangles_to_remove);
     } else {
-        println!("{:#?}", triangle_set.triangle_infos);
         let mut triangles_to_remove = Vec::new();
-        //get_supertriangle_triangles(&mut triangle_set, &mut triangles_to_remove);
+        get_supertriangle_triangles(&mut triangle_set, &mut triangles_to_remove);
         triangle_set.points = denormalize_points(&mut triangle_set.points, &bounds);
         triangles_to_remove.sort();
         triangles = get_triangles_discarding_holes(&triangle_set, triangles_to_remove);

@@ -23,16 +23,12 @@ pub fn create_holes(
 
     for mut hole in holes {
         // 5.1: Normalize
-        let (normalized_hole, new_bounds) = normalize_points(&mut hole, Some(bounds));
-        // TODO remove assert
-        assert_eq!(bounds, new_bounds);
-
+        let (normalized_hole, _) = normalize_points(&mut hole, Some(bounds));
         let mut polygon_indices = Vec::new();
 
         for point_to_insert in normalized_hole {
             // 5.2: Add the points to the Triangle set
-            let point_index: usize;
-            polygon_indices.push(triangulate_point(&mut triangle_set, point_to_insert)?.value())
+            polygon_indices.push(triangulate_point(&mut triangle_set, point_to_insert)?.value());
         }
 
         hole_indices.push(polygon_indices);
@@ -45,14 +41,14 @@ pub fn create_holes(
                 &mut triangle_set,
                 constraint_edge_indices[j],
                 constraint_edge_indices[(j + 1) % constraint_edge_indices.len()],
-            );
+            )?;
         }
     }
 
     let mut triangles_to_remove = Vec::<usize>::new();
     // 5.4: Identify all the triangles in the polygon
     for constraint_edge_indices in &hole_indices {
-        triangle_set.get_triangles_in_polygon(&constraint_edge_indices, &mut triangles_to_remove);
+        triangle_set.get_triangles_in_polygon(&constraint_edge_indices, &mut triangles_to_remove)?;
     }
 
     get_supertriangle_triangles(&mut triangle_set, &mut triangles_to_remove);
