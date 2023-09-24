@@ -320,6 +320,7 @@ impl TriangleSet {
             for j in 0..3{
                 if self.triangle_infos[triangles_with_endpoint[i]].vertex_indices[j] == endpoint_a_index{
                     vertex_position_in_triangle = j;
+                    break;
                 }
 
             }
