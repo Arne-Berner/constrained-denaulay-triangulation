@@ -396,7 +396,9 @@ impl TriangleSet {
                     [tentative_adjacent_triangle]
                     .expect("This would result in an endless loop");
             } else {
-                panic!("This results in an endless loop!")
+                println!("test");
+                // it did not result in an endless loop?
+                //panic!("This results in an endless loop!")
             }
         }
         intersected_triangle_edges

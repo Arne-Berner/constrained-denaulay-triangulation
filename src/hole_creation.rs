@@ -94,9 +94,10 @@ fn add_constrained_edge_to_triangulation(
             intersected_triangle_edge.b(),
         ) {
             let current_triangle_index = current_intersected_triangle_edge.triangle_index;
+            let current_edge_index = current_intersected_triangle_edge.edge_index;
             let mut current_triangle_info = triangle_set.get_triangle_info(current_triangle_index);
             let opposite_triangle_index =
-                current_triangle_info.adjacent_triangle_indices[current_triangle_index].unwrap();
+                current_triangle_info.adjacent_triangle_indices[current_edge_index].unwrap();
             // TODO This should probably be checked for None, I think there are cases it is None.
             let mut opposite_triangle_info =
                 triangle_set.get_triangle_info(opposite_triangle_index);
