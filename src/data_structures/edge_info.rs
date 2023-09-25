@@ -1,3 +1,4 @@
+#[derive(Debug)]
 pub struct EdgeInfo {
     pub triangle_index: usize,
     pub edge_index: usize,
