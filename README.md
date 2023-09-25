@@ -10,3 +10,4 @@ Also bevy was a heavy inspiration for some data types, but has been stripped to 
 - [ ] only use errors to the outside, that are relevant to the user
 - [ ] make the API just the "triangulate" function
 - [ ] derive all the important derives
+- [ ] test squares at input
