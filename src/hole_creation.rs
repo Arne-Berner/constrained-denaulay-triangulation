@@ -107,7 +107,7 @@ fn add_constrained_edge_to_triangulation(
             // TODO This should probably be checked for None, this will be none, if the hole is bigger than the first polygon
             let opposite_triangle_info = triangle_set.get_triangle_info(opposite_triangle_index);
             let triangle_points =
-                triangle_set.get_triangle(current_intersected_triangle_edge.triangle_index);
+                triangle_set.get_triangle(current_triangle_index);
 
             // Gets the opposite vertex of adjacent triangle, knowing the first vertex of the shared edge
             let mut opposite_vertex = None;
@@ -130,7 +130,6 @@ fn add_constrained_edge_to_triangulation(
                 &triangle_points.p(2),
                 opposite_point,
             ) {
-                // Swap
                 let index_pair = TriangleIndexPair {
                     adjacent: opposite_triangle_index,
                     current: current_triangle_index,
