@@ -12,3 +12,4 @@ Also bevy was a heavy inspiration for some data types, but has been stripped to 
 - [ ] derive all the important derives
 - [ ] test squares at input
 - [ ] test bigger than first polygon input
+- [ ] inline functions

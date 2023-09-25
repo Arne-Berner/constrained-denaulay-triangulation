@@ -100,10 +100,10 @@ fn add_constrained_edge_to_triangulation(
             intersected_triangle_edge.b(),
         ) {
             let current_triangle_index = current_intersected_triangle_edge.triangle_index;
-            let current_edge_index = current_intersected_triangle_edge.edge_index;
+            let current_intersected_edge_index = current_intersected_triangle_edge.edge_index;
             let mut current_triangle_info = triangle_set.get_triangle_info(current_triangle_index);
             let opposite_triangle_index =
-                current_triangle_info.adjacent_triangle_indices[current_edge_index].unwrap();
+                current_triangle_info.adjacent_triangle_indices[current_intersected_edge_index].unwrap();
             // TODO This should probably be checked for None, this will be none, if the hole is bigger than the first polygon
             let opposite_triangle_info = triangle_set.get_triangle_info(opposite_triangle_index);
             let triangle_points =
@@ -137,7 +137,7 @@ fn add_constrained_edge_to_triangulation(
                 swap_edges(
                     &index_pair,
                     triangle_set,
-                    current_intersected_triangle_edge.edge_index,
+                    current_intersected_edge_index,
                 )?;
 
                 // Refreshes triangle data after swapping
@@ -145,22 +145,24 @@ fn add_constrained_edge_to_triangulation(
                     .get_triangle_info(current_triangle_index);
 
                 // Check new diagonal against the intersecting edge
-                let new_triangle_shared_edge_vertex =
-                    (current_edge_index + 2) % 3;
+                // this should always be 2 and 0, since swap edges always sets the vertices in a specific order
+                let shared_vertex_a = current_triangle_info.vertex_indices[2];
+                let shared_vertex_b = current_triangle_info.vertex_indices[0];
                 let new_triangle_shared_point_a = triangle_set.get_point(
-                    current_triangle_info.vertex_indices[new_triangle_shared_edge_vertex],
+                    current_triangle_info.vertex_indices[2],
                 );
                 let new_triangle_shared_point_b = triangle_set.get_point(
-                    current_triangle_info.vertex_indices[(new_triangle_shared_edge_vertex + 1) % 3],
+                    current_triangle_info.vertex_indices[0],
                 );
 
                 let new_edge = EdgeInfo::new(
                     current_triangle_index,
-                    new_triangle_shared_edge_vertex,
-                    current_triangle_info.vertex_indices[new_triangle_shared_edge_vertex],
-                    current_triangle_info.vertex_indices[(new_triangle_shared_edge_vertex + 1) % 3],
+                    2,
+                    shared_vertex_a,
+                    shared_vertex_b,
                 );
 
+                // if it still intersects after swapping, it needs to be removed
                 if let Some(_) = intersection_between_lines(
                     edge_endpoint_a,
                     edge_endpoint_b,
