@@ -142,11 +142,11 @@ fn add_constrained_edge_to_triangulation(
 
                 // Refreshes triangle data after swapping
                 current_triangle_info = triangle_set
-                    .get_triangle_info(current_intersected_triangle_edge.triangle_index);
+                    .get_triangle_info(current_triangle_index);
 
                 // Check new diagonal against the intersecting edge
                 let new_triangle_shared_edge_vertex =
-                    (current_intersected_triangle_edge.edge_index + 2) % 3;
+                    (current_edge_index + 2) % 3;
                 let new_triangle_shared_point_a = triangle_set.get_point(
                     current_triangle_info.vertex_indices[new_triangle_shared_edge_vertex],
                 );
