@@ -48,7 +48,8 @@ pub fn create_holes(
     let mut triangles_to_remove = Vec::<usize>::new();
     // 5.4: Identify all the triangles in the polygon
     for constraint_edge_indices in &hole_indices {
-        triangle_set.get_triangles_in_polygon(&constraint_edge_indices, &mut triangles_to_remove)?;
+        triangle_set
+            .get_triangles_in_polygon(&constraint_edge_indices, &mut triangles_to_remove)?;
     }
 
     get_supertriangle_triangles(&mut triangle_set, &mut triangles_to_remove);
@@ -64,7 +65,8 @@ fn add_constrained_edge_to_triangulation(
     endpoint_b_index: usize,
 ) -> Result<(), CustomError> {
     // Detects if the edge already exists
-    if let Some(idx) = triangle_set.find_edge_info_for_triangle(endpoint_a_index, endpoint_b_index) {
+    if let Some(idx) = triangle_set.find_edge_info_for_triangle(endpoint_a_index, endpoint_b_index)
+    {
         return Ok(());
     }
 
@@ -83,7 +85,10 @@ fn add_constrained_edge_to_triangulation(
         triangle_containing_a,
     );
     let mut intersected_triangle_edges = VecDeque::from(intersected_triangle_edges);
-println!("intersected_triangle_edges: {:#?}", intersected_triangle_edges);
+    println!(
+        "intersected_triangle_edges: {:#?}",
+        intersected_triangle_edges
+    );
 
     let mut new_edges = Vec::<EdgeInfo>::new();
 
@@ -99,9 +104,8 @@ println!("intersected_triangle_edges: {:#?}", intersected_triangle_edges);
             let mut current_triangle_info = triangle_set.get_triangle_info(current_triangle_index);
             let opposite_triangle_index =
                 current_triangle_info.adjacent_triangle_indices[current_edge_index].unwrap();
-            // TODO This should probably be checked for None, I think there are cases it is None.
-            let opposite_triangle_info =
-                triangle_set.get_triangle_info(opposite_triangle_index);
+            // TODO This should probably be checked for None, this will be none, if the hole is bigger than the first polygon
+            let opposite_triangle_info = triangle_set.get_triangle_info(opposite_triangle_index);
             let triangle_points =
                 triangle_set.get_triangle(current_intersected_triangle_edge.triangle_index);
 
@@ -249,11 +253,13 @@ println!("intersected_triangle_edges: {:#?}", intersected_triangle_edges);
     return Ok(());
 }
 
-pub fn get_supertriangle_triangles(triangle_set: &mut TriangleSet, output_triangles: &mut Vec<usize>) {
+pub fn get_supertriangle_triangles(
+    triangle_set: &mut TriangleSet,
+    output_triangles: &mut Vec<usize>,
+) {
     for i in 0..3 {
         // Vertices of the supertriangle
         let triangles_that_share_vertex = triangle_set.get_triangle_indices_with_vertex(i);
-
 
         for j in 0..triangles_that_share_vertex.len() {
             // if the triangles that share the vertex of the super triangles are not in there, put them in there
@@ -262,5 +268,4 @@ pub fn get_supertriangle_triangles(triangle_set: &mut TriangleSet, output_triang
             }
         }
     }
-
 }
