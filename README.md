@@ -11,3 +11,4 @@ Also bevy was a heavy inspiration for some data types, but has been stripped to 
 - [ ] make the API just the "triangulate" function
 - [ ] derive all the important derives
 - [ ] test squares at input
+- [ ] test bigger than first polygon input
