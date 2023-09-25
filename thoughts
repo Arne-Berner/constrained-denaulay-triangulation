@@ -1,1 +1,0 @@
-maybe instead of using refs to vecs i could just create a vector and use extend every time..
