@@ -1,10 +1,12 @@
+use std::collections::VecDeque;
+
 use crate::math_utils::{
     intersection_between_lines, is_point_to_the_left_of_edge, is_point_to_the_right_of_edge,
 };
 
 use super::{
-    edge_info::EdgeInfo, error::CustomError, found_or_added::FoundOrAdded, triangle::Triangle,
-    triangle_info::TriangleInfo, vector::Vector,
+    edge::Edge, edge_info::EdgeInfo, error::CustomError, found_or_added::FoundOrAdded,
+    triangle::Triangle, triangle_info::TriangleInfo, vector::Vector,
 };
 
 #[derive(Debug)]
@@ -59,8 +61,8 @@ impl TriangleSet {
         self.triangle_infos[index]
     }
 
-    pub fn get_point(&self, index: usize) -> Vector {
-        self.points[index]
+    pub fn get_point_from_vertex(&self, vertex: usize) -> Vector {
+        self.points[vertex]
     }
 
     pub fn get_point_from_index(&self, triangle_index: usize, vertex_index: usize) -> &Vector {
@@ -169,7 +171,7 @@ impl TriangleSet {
         // First it gets all the triangles of the outline
         for outline_index in 0..polygon_outline.len() {
             // For every edge, it gets the inner triangle that contains such edge
-            if let Some(edge_in_triangle) = self.find_edge_info_for_triangle(
+            if let Some(edge_in_triangle) = self.find_edge_info_for_vertices(
                 polygon_outline[outline_index],
                 polygon_outline[(outline_index + 1) % polygon_outline.len()],
             ) {
@@ -266,8 +268,8 @@ impl TriangleSet {
         Ok(())
     }
 
-    // This will find only one triangle, because edges are directional
-    pub fn find_edge_info_for_triangle(
+    // This will find only one edge_info, because edges are directional
+    pub fn find_edge_info_for_vertices(
         &self,
         edge_vertex_a: usize,
         edge_vertex_b: usize,
@@ -345,8 +347,8 @@ impl TriangleSet {
         line_endpoint_a: Vector,
         line_endpoint_b: Vector,
         start_triangle: usize,
-    ) -> Vec<EdgeInfo> {
-        let mut intersected_triangle_edges = Vec::<EdgeInfo>::new();
+    ) -> VecDeque<Edge> {
+        let mut intersected_triangle_edges = VecDeque::<Edge>::new();
         let mut is_triangle_containing_b_found = false;
         let mut triangle_index = start_triangle;
 
@@ -364,7 +366,7 @@ impl TriangleSet {
                 // if one point it the endpoint, then this is the end triangle
                 if current_a == line_endpoint_b || current_b == line_endpoint_b {
                     is_triangle_containing_b_found = true;
-                // println!("break");
+                    // println!("break");
                     break;
                 }
 
@@ -373,19 +375,15 @@ impl TriangleSet {
                     // println!("edge vertex a and b {:#?}, {:#?}",edge_vertex_a, edge_vertex_b);
 
                     if intersection_between_lines(
-                        current_a,
-                        current_b,
-                        line_endpoint_a,
-                        line_endpoint_b,
+                        &current_a,
+                        &current_b,
+                        &line_endpoint_a,
+                        &line_endpoint_b,
                     )
                     .is_some()
                     {
-                        intersected_triangle_edges.push(EdgeInfo::new(
-                            triangle_index,
-                            i,
-                            edge_vertex_a,
-                            edge_vertex_b,
-                        ));
+                        intersected_triangle_edges
+                            .push_back(Edge::new(edge_vertex_a, edge_vertex_b));
 
                         break;
                     }

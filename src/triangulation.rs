@@ -367,7 +367,7 @@ pub fn swap_edges(
     );
     triangle_set.replace_triangle(index_pair.current, &new_current);
     // change the adjacent triangles of the changed adjacent triangles
-    
+
     if let Some(needs_replacement_index) = first_new_adjacent {
         triangle_set.replace_adjacent(
             needs_replacement_index,
@@ -389,9 +389,9 @@ fn get_triangles(triangle_set: &TriangleSet) -> Vec<Triangle> {
     let mut output_triangles = Vec::with_capacity(triangle_set.triangle_count() - 1);
     for triangle_info in &triangle_set.triangle_infos {
         output_triangles.push(Triangle::new(
-            triangle_set.get_point(triangle_info.vertex_indices[0]),
-            triangle_set.get_point(triangle_info.vertex_indices[1]),
-            triangle_set.get_point(triangle_info.vertex_indices[2]),
+            triangle_set.get_point_from_vertex(triangle_info.vertex_indices[0]),
+            triangle_set.get_point_from_vertex(triangle_info.vertex_indices[1]),
+            triangle_set.get_point_from_vertex(triangle_info.vertex_indices[2]),
         ))
     }
     output_triangles
@@ -409,9 +409,9 @@ fn get_triangles_discarding_holes(
     for (idx, triangle_info) in triangle_set.triangle_infos.iter().enumerate() {
         if !(triangles_to_remove.get(idxs_i) == Some(&idx)) {
             output_triangles.push(Triangle::new(
-                triangle_set.get_point(triangle_info.vertex_indices[0]),
-                triangle_set.get_point(triangle_info.vertex_indices[1]),
-                triangle_set.get_point(triangle_info.vertex_indices[2]),
+                triangle_set.get_point_from_vertex(triangle_info.vertex_indices[0]),
+                triangle_set.get_point_from_vertex(triangle_info.vertex_indices[1]),
+                triangle_set.get_point_from_vertex(triangle_info.vertex_indices[2]),
             ));
         } else {
             idxs_i += 1;

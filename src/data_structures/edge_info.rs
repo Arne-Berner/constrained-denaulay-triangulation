@@ -21,14 +21,14 @@ impl EdgeInfo {
         }
     }
 
-    pub fn a(&self) -> usize {
+    pub fn vertex_a(&self) -> usize {
         self.edge_vertex_a
     }
 
-    pub fn b(&self) -> usize {
+    pub fn vertex_b(&self) -> usize {
         self.edge_vertex_b
     }
-    pub fn edge(&self) -> (usize, usize){
+    pub fn edge(&self) -> (usize, usize) {
         (self.edge_vertex_a, self.edge_vertex_b)
     }
 }

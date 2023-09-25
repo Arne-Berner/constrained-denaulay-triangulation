@@ -147,10 +147,10 @@ pub fn is_point_inside_circumcircle(triangle: Triangle, point_to_check: Vector) 
 
 /// Calculates whether 2 line segments intersect and returns the intersection point.
 pub fn intersection_between_lines(
-    endpoint_a1: Vector,
-    endpoint_b1: Vector,
-    endpoint_a2: Vector,
-    endpoint_b2: Vector,
+    endpoint_a1: &Vector,
+    endpoint_b1: &Vector,
+    endpoint_a2: &Vector,
+    endpoint_b2: &Vector,
 ) -> Option<Vector> {
     // https://stackoverflow.com/questions/4543506/algorithm-for-intersection-of-2-lines
     let mut intersection_point = Vector::new(f32::MAX, f32::MAX);
