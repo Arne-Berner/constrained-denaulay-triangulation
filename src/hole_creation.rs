@@ -64,7 +64,7 @@ fn add_constrained_edge_to_triangulation(
     endpoint_b_index: usize,
 ) -> Result<(), CustomError> {
     // Detects if the edge already exists
-    if let Some(_) = triangle_set.find_edge_info_for_triangle(endpoint_a_index, endpoint_b_index) {
+    if let Some(idx) = triangle_set.find_edge_info_for_triangle(endpoint_a_index, endpoint_b_index) {
         return Ok(());
     }
 
@@ -83,6 +83,7 @@ fn add_constrained_edge_to_triangulation(
         triangle_containing_a,
     );
     let mut intersected_triangle_edges = VecDeque::from(intersected_triangle_edges);
+println!("intersected_triangle_edges: {:#?}", intersected_triangle_edges);
 
     let mut new_edges = Vec::<EdgeInfo>::new();
 
