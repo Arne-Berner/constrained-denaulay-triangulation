@@ -10,7 +10,7 @@ Also bevy was a heavy inspiration for some data types, but has been stripped to 
 - [ ] only use errors to the outside, that are relevant to the user
 - [ ] make the API just the "triangulate" function
 - [ ] derive all the important derives
-- [ ] test squares at input
+- [ ] test squares at input (they might be the reason for the endless loop)
 - [ ] test bigger than first polygon input
 - [ ] inline functions
 - [ ] check what happens if hole point and polygon point are the same
