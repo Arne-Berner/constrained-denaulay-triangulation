@@ -357,17 +357,20 @@ impl TriangleSet {
             for i in 0..3 {
                 let edge_vertex_a = self.triangle_infos[triangle_index].vertex_indices[i];
                 let edge_vertex_b = self.triangle_infos[triangle_index].vertex_indices[(i + 1) % 3];
+                // println!("every iteration edge vertex a and b {:#?}, {:#?}",edge_vertex_a, edge_vertex_b);
                 let current_a = self.points[edge_vertex_a];
                 let current_b = self.points[edge_vertex_b];
 
                 // if one point it the endpoint, then this is the end triangle
                 if current_a == line_endpoint_b || current_b == line_endpoint_b {
                     is_triangle_containing_b_found = true;
+                // println!("break");
                     break;
                 }
 
                 if is_point_to_the_right_of_edge(&current_a, &current_b, &line_endpoint_b) {
                     tentative_adjacent_triangle = Some(i);
+                    // println!("edge vertex a and b {:#?}, {:#?}",edge_vertex_a, edge_vertex_b);
 
                     if intersection_between_lines(
                         current_a,
