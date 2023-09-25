@@ -13,3 +13,4 @@ Also bevy was a heavy inspiration for some data types, but has been stripped to 
 - [ ] test squares at input
 - [ ] test bigger than first polygon input
 - [ ] inline functions
+- [ ] check what happens if hole point and polygon point are the same
