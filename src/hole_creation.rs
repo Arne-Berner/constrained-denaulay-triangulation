@@ -77,7 +77,7 @@ fn add_constrained_edge_to_triangulation(
 
     // 5.3.2: Get all the triangle edges intersected by the constrained edge
     // TODO rewrite to VecDeque and use push front instead of insert 0?
-    let mut intersected_triangle_edges = triangle_set.get_intersecting_edges(
+    let intersected_triangle_edges = triangle_set.get_intersecting_edges(
         edge_endpoint_a,
         edge_endpoint_b,
         triangle_containing_a,
