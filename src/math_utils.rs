@@ -224,7 +224,6 @@ pub fn is_triangle_vertices_cw(point0: &Vector, point1: &Vector, point2: &Vector
     ) < 0.0
 }
 
-// TODO this is never used
 pub fn is_quadrilateral_convex(a: &Vector, b: &Vector, c: &Vector, d: &Vector) -> bool {
     let abc = is_triangle_vertices_cw(a, b, c);
     let abd = is_triangle_vertices_cw(a, b, d);
