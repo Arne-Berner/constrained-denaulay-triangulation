@@ -65,10 +65,23 @@ fn add_constrained_edge_to_triangulation(
     endpoint_b_index: usize,
 ) -> Result<(), CustomError> {
     // Detects if the edge already exists
-    if let Some(idx) = triangle_set.find_edge_info_for_triangle(endpoint_a_index, endpoint_b_index)
+    if let Some(_) = triangle_set.find_edge_info_for_triangle(endpoint_a_index, endpoint_b_index)
     {
         return Ok(());
     }
+    // pseudocode 
+    // find all intersecting edges
+    // starting with the first one, create a quadrileteral, with the intersecting edge vertex as the start
+    // next is the endpoint_a 
+    // other intersecting edge vertex
+    // last vertex of adjacent triangle
+    // if is convex: replace
+    // else: don't care??'
+    // add new edge to a list
+    // repeat for every one
+    // check delaunay constraint for endpoint a triangle with the added new edges
+    // repeat with every edge
+    // can there be new triangles, that are not delaunay that way? i don't think so
 
     let edge_endpoint_a = triangle_set.get_point(endpoint_a_index);
     let edge_endpoint_b = triangle_set.get_point(endpoint_b_index);
@@ -102,9 +115,10 @@ fn add_constrained_edge_to_triangulation(
             let current_triangle_index = current_intersected_triangle_edge.triangle_index;
             let current_intersected_edge_index = current_intersected_triangle_edge.edge_index;
             let mut current_triangle_info = triangle_set.get_triangle_info(current_triangle_index);
+            // if we are only checking intersected edges, then there must be an adjacent triangle (at least the one containing edgepoint b)
             let opposite_triangle_index =
                 current_triangle_info.adjacent_triangle_indices[current_intersected_edge_index].unwrap();
-            // TODO This should probably be checked for None, this will be none, if the hole is bigger than the first polygon
+            
             let opposite_triangle_info = triangle_set.get_triangle_info(opposite_triangle_index);
             let triangle_points =
                 triangle_set.get_triangle(current_triangle_index);
@@ -145,7 +159,7 @@ fn add_constrained_edge_to_triangulation(
                     .get_triangle_info(current_triangle_index);
 
                 // Check new diagonal against the intersecting edge
-                // this should always be 2 and 0, since swap edges always sets the vertices in a specific order
+                // the indices should always be 2 and 0, since swap edges always sets the vertices in a specific order
                 let shared_vertex_a = current_triangle_info.vertex_indices[2];
                 let shared_vertex_b = current_triangle_info.vertex_indices[0];
                 let new_triangle_shared_point_a = triangle_set.get_point(
@@ -177,6 +191,7 @@ fn add_constrained_edge_to_triangulation(
                         // New triangles edge still intersects with the constrained edge, so it is returned to the list
                         intersected_triangle_edges.push_front(new_edge);
                     } else {
+                        // otherwise it needs to be checked for the delaunay constraint
                         new_edges.push(new_edge);
                     }
                 } else {
