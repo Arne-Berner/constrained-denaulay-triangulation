@@ -65,14 +65,13 @@ fn add_constrained_edge_to_triangulation(
     endpoint_b_index: usize,
 ) -> Result<(), CustomError> {
     // Detects if the edge already exists
-    if let Some(_) = triangle_set.find_edge_info_for_triangle(endpoint_a_index, endpoint_b_index)
-    {
+    if let Some(_) = triangle_set.find_edge_info_for_triangle(endpoint_a_index, endpoint_b_index) {
         return Ok(());
     }
-    // pseudocode 
+    // pseudocode
     // find all intersecting edges
     // starting with the first one, create a quadrileteral, with the intersecting edge vertex as the start
-    // next is the endpoint_a 
+    // next is the endpoint_a
     // other intersecting edge vertex
     // last vertex of adjacent triangle
     // if is convex: replace
@@ -83,12 +82,11 @@ fn add_constrained_edge_to_triangulation(
     // repeat with every edge
     // can there be new triangles, that are not delaunay that way? i don't think so
 
-    let edge_endpoint_a = triangle_set.get_point(endpoint_a_index);
-    let edge_endpoint_b = triangle_set.get_point(endpoint_b_index);
-
     // 5.3.1: Search for the triangle that contains the beginning of the new edge
     let triangle_containing_a = triangle_set
         .find_triangle_that_contains_edge_start_and_intersects(endpoint_a_index, endpoint_b_index);
+    let edge_endpoint_a = triangle_set.get_point(endpoint_a_index);
+    let edge_endpoint_b = triangle_set.get_point(endpoint_b_index);
 
     // 5.3.2: Get all the triangle edges intersected by the constrained edge
     // TODO rewrite to VecDeque and use push front instead of insert 0?
@@ -105,164 +103,140 @@ fn add_constrained_edge_to_triangulation(
 
     let mut new_edges = Vec::<EdgeInfo>::new();
 
-    while let Some(intersected_triangle_edge) = intersected_triangle_edges.pop_back() {
+    while let Some(intersected_triangle_edge) = intersected_triangle_edges.pop_front() {
         // 5.3.3: Form quadrilaterals and swap intersected edges
         // Deduces the data for both triangles
-        if let Some(current_intersected_triangle_edge) = triangle_set.find_edge_info_for_triangle(
-            intersected_triangle_edge.a(),
-            intersected_triangle_edge.b(),
-        ) {
-            let current_triangle_index = current_intersected_triangle_edge.triangle_index;
-            let current_intersected_edge_index = current_intersected_triangle_edge.edge_index;
-            let mut current_triangle_info = triangle_set.get_triangle_info(current_triangle_index);
-            // if we are only checking intersected edges, then there must be an adjacent triangle (at least the one containing edgepoint b)
-            let opposite_triangle_index =
-                current_triangle_info.adjacent_triangle_indices[current_intersected_edge_index].unwrap();
-            
-            let opposite_triangle_info = triangle_set.get_triangle_info(opposite_triangle_index);
-            let triangle_points =
-                triangle_set.get_triangle(current_triangle_index);
 
-            // Gets the opposite vertex of adjacent triangle, knowing the first vertex of the shared edge
-            let mut opposite_vertex = None;
+        let current_triangle_index = intersected_triangle_edge.triangle_index;
+        let current_intersected_edge_index = intersected_triangle_edge.edge_index;
+        let mut current_triangle_info = triangle_set.get_triangle_info(current_triangle_index);
+        // if we are only checking intersected edges, then there must be an adjacent triangle (at least the one containing edgepoint b)
+        let opposite_triangle_index = current_triangle_info.adjacent_triangle_indices
+            [current_intersected_edge_index]
+            .unwrap();
+        let opposite_triangle_info = triangle_set.get_triangle_info(opposite_triangle_index);
+        let triangle_points = triangle_set.get_triangle(current_triangle_index);
 
-            for j in 0..3 {
-                if opposite_triangle_info.vertex_indices[j]
-                    == current_triangle_info.vertex_indices
-                        [(current_intersected_triangle_edge.edge_index + 1) % 3]
-                {
-                    opposite_vertex = Some(opposite_triangle_info.vertex_indices[(j + 2) % 3]);
-                    break;
-                }
-            }
+        // Gets the opposite vertex of adjacent triangle, knowing the first vertex of the shared edge
+        let mut opposite_vertex = None;
 
-            let opposite_point = &triangle_set.get_point(opposite_vertex.unwrap());
-
-            if is_quadrilateral_convex(
-                &triangle_points.p(0),
-                &triangle_points.p(1),
-                &triangle_points.p(2),
-                opposite_point,
-            ) {
-                let index_pair = TriangleIndexPair {
-                    adjacent: opposite_triangle_index,
-                    current: current_triangle_index,
-                };
-                swap_edges(
-                    &index_pair,
-                    triangle_set,
-                    current_intersected_edge_index,
-                )?;
-
-                // Refreshes triangle data after swapping
-                current_triangle_info = triangle_set
-                    .get_triangle_info(current_triangle_index);
-
-                // Check new diagonal against the intersecting edge
-                // the indices should always be 2 and 0, since swap edges always sets the vertices in a specific order
-                let shared_vertex_a = current_triangle_info.vertex_indices[2];
-                let shared_vertex_b = current_triangle_info.vertex_indices[0];
-                let new_triangle_shared_point_a = triangle_set.get_point(
-                    current_triangle_info.vertex_indices[2],
-                );
-                let new_triangle_shared_point_b = triangle_set.get_point(
-                    current_triangle_info.vertex_indices[0],
-                );
-
-                let new_edge = EdgeInfo::new(
-                    current_triangle_index,
-                    2,
-                    shared_vertex_a,
-                    shared_vertex_b,
-                );
-
-                // if it still intersects after swapping, it needs to be removed
-                if let Some(_) = intersection_between_lines(
-                    edge_endpoint_a,
-                    edge_endpoint_b,
-                    new_triangle_shared_point_a,
-                    new_triangle_shared_point_b,
-                ) {
-                    if new_triangle_shared_point_a != edge_endpoint_b
-                        && new_triangle_shared_point_b != edge_endpoint_b
-                        && new_triangle_shared_point_a != edge_endpoint_a
-                        && new_triangle_shared_point_b != edge_endpoint_a
-                    {
-                        // New triangles edge still intersects with the constrained edge, so it is returned to the list
-                        intersected_triangle_edges.push_front(new_edge);
-                    } else {
-                        // otherwise it needs to be checked for the delaunay constraint
-                        new_edges.push(new_edge);
-                    }
-                } else {
-                    // Back to the list
-                    intersected_triangle_edges.push_front(current_intersected_triangle_edge);
-                }
+        for j in 0..3 {
+            if opposite_triangle_info.vertex_indices[j]
+                == current_triangle_info.vertex_indices
+                    [(intersected_triangle_edge.edge_index + 1) % 3]
+            {
+                opposite_vertex = Some(opposite_triangle_info.vertex_indices[(j + 2) % 3]);
+                break;
             }
         }
 
-        // 5.3.4. Check Delaunay constraint and swap edges
-        for i in 0..new_edges.len() {
-            {
-                // Checks if the constrained edge coincides with the new edge
-                let triangle_edge_point_a = triangle_set.get_point(new_edges[i].a());
-                let triangle_edge_point_b = triangle_set.get_point(new_edges[i].b());
+        let opposite_point = &triangle_set.get_point(opposite_vertex.unwrap());
 
-                if (triangle_edge_point_a == edge_endpoint_a
-                    && triangle_edge_point_b == edge_endpoint_b)
-                    || (triangle_edge_point_b == edge_endpoint_a
-                        && triangle_edge_point_a == edge_endpoint_b)
+        if is_quadrilateral_convex(
+            &triangle_points.p(0),
+            &triangle_points.p(1),
+            &triangle_points.p(2),
+            opposite_point,
+        ) {
+            let index_pair = TriangleIndexPair {
+                adjacent: opposite_triangle_index,
+                current: current_triangle_index,
+            };
+            swap_edges(&index_pair, triangle_set, current_intersected_edge_index)?;
+
+            // Refreshes triangle data after swapping
+            current_triangle_info = triangle_set.get_triangle_info(current_triangle_index);
+
+            // Check new diagonal against the intersecting edge
+            // the indices should always be 2 and 0, since swap edges always sets the vertices in a specific order
+            let shared_vertex_a = current_triangle_info.vertex_indices[2];
+            let shared_vertex_b = current_triangle_info.vertex_indices[0];
+            let new_triangle_shared_point_a = triangle_set.get_point(shared_vertex_a);
+            let new_triangle_shared_point_b = triangle_set.get_point(shared_vertex_b);
+
+            // only need to create this, if it gets pushed
+            let new_edge =
+                EdgeInfo::new(current_triangle_index, 2, shared_vertex_a, shared_vertex_b);
+
+            // if it still intersects after swapping, it needs to be removed
+            if let Some(_) = intersection_between_lines(
+                edge_endpoint_a,
+                edge_endpoint_b,
+                new_triangle_shared_point_a,
+                new_triangle_shared_point_b,
+            ) {
+                // this seems wrong
+                //// if none of the new shared_edge_points are edge_endpoints
+                //// this is always true, in the first loop, because we are swapping with endpoint a as the start
+                if new_triangle_shared_point_a != edge_endpoint_b
+                    && new_triangle_shared_point_b != edge_endpoint_b
+                    && new_triangle_shared_point_a != edge_endpoint_a
+                    && new_triangle_shared_point_b != edge_endpoint_a
                 {
-                    continue;
+                    // New triangles edge still intersects with the constrained edge, so it is returned to the list
+                    intersected_triangle_edges.push_back(new_edge);
                 }
+            } else {
+                // otherwise it needs to be checked for the delaunay constraint
+                new_edges.push(new_edge);
+            }
+        } else {
+            // If they do not form a convex quadrilateral, then they need to be checked again later
+            intersected_triangle_edges.push_back(intersected_triangle_edge);
+        }
+    }
 
-                // Deduces the data for both triangles
-                let current_edge = triangle_set
-                    .find_edge_info_for_triangle(new_edges[i].a(), new_edges[i].b())
-                    .expect("Those edges were just created and should contain an edge");
+    // 5.3.4. Check Delaunay constraint and swap edges
+    for i in 0..new_edges.len() {
+        {
+            // Checks if the constrained edge coincides with the new edge
+            let triangle_edge_point_a = triangle_set.get_point(new_edges[i].a());
+            let triangle_edge_point_b = triangle_set.get_point(new_edges[i].b());
 
-                let mut current_edge_triangle =
-                    triangle_set.get_triangle_info(current_edge.triangle_index);
 
-                let triangle_vertex_not_shared = (current_edge.edge_index + 2) % 3;
-                let triangle_point_not_shared = triangle_set
-                    .get_point(current_edge_triangle.vertex_indices[triangle_vertex_not_shared]);
+            if (triangle_edge_point_a == edge_endpoint_a)
+                && (triangle_edge_point_b == edge_endpoint_b)
+            {
+                continue;
+            }
 
-                let opposite_triangle_index = current_edge_triangle.adjacent_triangle_indices
-                    [current_edge.edge_index]
-                    .unwrap();
+            //this should not happen, since the swap is always in the same order
+            if (triangle_edge_point_b == edge_endpoint_a)
+                && (triangle_edge_point_a == edge_endpoint_b)
+            {
+                continue;
+            }
 
-                let mut opposite_triangle_info =
-                    triangle_set.get_triangle_info(opposite_triangle_index);
+            // Deduces the data for both triangles
+            let current_edge = triangle_set
+                .find_edge_info_for_triangle(new_edges[i].a(), new_edges[i].b())
+                .expect("Those edges were just created and should contain an edge");
+            // the comment is right, but I had some wrong assumptions above i guess.
+            // also the new edge should contain all the information needed
 
-                let opposite_triangle = triangle_set.get_triangle(
-                    current_edge_triangle.adjacent_triangle_indices[current_edge.edge_index]
-                        .unwrap(),
-                );
+            let current_edge_triangle = triangle_set.get_triangle_info(current_edge.triangle_index);
 
-                if is_point_inside_circumcircle(opposite_triangle, triangle_point_not_shared) {
-                    // Finds the edge of the opposite triangle that is shared with the other triangle, this edge will be swapped
+            let triangle_vertex_not_shared = (current_edge.edge_index + 2) % 3;
+            let triangle_point_not_shared = triangle_set
+                .get_point(current_edge_triangle.vertex_indices[triangle_vertex_not_shared]);
 
-                    let mut index = 0;
-                    for i in 0..3 {
-                        if opposite_triangle_info.adjacent_triangle_indices[i].unwrap()
-                            == current_edge.triangle_index
-                        {
-                            index = i;
-                            break;
-                        }
-                    }
+            let opposite_triangle_index =
+                current_edge_triangle.adjacent_triangle_indices[current_edge.edge_index].unwrap();
 
-                    // Swap
-                    swap_edges(
-                        &TriangleIndexPair {
-                            adjacent: opposite_triangle_index,
-                            current: current_edge.triangle_index,
-                        },
-                        triangle_set,
-                        current_edge.edge_index,
-                    )?;
-                }
+            let opposite_triangle = triangle_set.get_triangle(
+                current_edge_triangle.adjacent_triangle_indices[current_edge.edge_index].unwrap(),
+            );
+
+            if is_point_inside_circumcircle(opposite_triangle, triangle_point_not_shared) {
+                // Swap
+                swap_edges(
+                    &TriangleIndexPair {
+                        adjacent: opposite_triangle_index,
+                        current: current_edge.triangle_index,
+                    },
+                    triangle_set,
+                    current_edge.edge_index,
+                )?;
             }
         }
     }
