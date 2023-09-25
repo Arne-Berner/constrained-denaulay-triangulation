@@ -9,3 +9,4 @@ Also bevy was a heavy inspiration for some data types, but has been stripped to 
 - [ ] remove all TODO comments
 - [ ] only use errors to the outside, that are relevant to the user
 - [ ] make the API just the "triangulate" function
+- [ ] derive all the important derives
