@@ -48,7 +48,8 @@ pub fn create_holes(
 
     let mut triangles_to_remove = Vec::<usize>::new();
     // 5.4: Identify all the triangles in the polygon
-    for constraint_edge_indices in &hole_indices {
+    for constraint_edge_indices in &mut hole_indices {
+        constraint_edge_indices.reverse();
         triangle_set
             .get_triangles_in_polygon(&constraint_edge_indices, &mut triangles_to_remove)?;
     }
