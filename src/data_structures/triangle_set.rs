@@ -163,7 +163,7 @@ impl TriangleSet {
         polygon_outline: &Vec<usize>,
         triangles_to_remove: &mut Vec<usize>,
     ) -> Result<(), CustomError> {
-        // TODO This one is allyymost certainly not getting the triangles in the polygon, but outside of it.
+        // TODO This function takes triangles in a specific order.
         // This method assumes that the edges of the triangles to find were created using the same vertex order
         // It also assumes all triangles are inside a supertriangle, so no adjacent triangles are -1
         let mut adjacent_triangle_indices: Vec<usize> = Vec::new();

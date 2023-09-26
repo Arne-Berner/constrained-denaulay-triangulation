@@ -16,22 +16,22 @@ fn main() {
     minihole.push(Vector::new(-0.5 ,6.5)*10.);
     minihole.push(Vector::new(0.5, 6.5)*10.);
     minihole.push(Vector::new(0., 7.5)*10.);
-    holes.push(minihole);
+    //holes.push(minihole);
     let mut minihole = Vec::<Vector>::new();
     minihole.push((Vector::new(-0.5 ,6.5)+2.)*10.);
     minihole.push((Vector::new(0.5, 6.5)+2.)*10.);
     minihole.push((Vector::new(0., 7.5)+2.)*10.);
-    holes.push(minihole);
+    //holes.push(minihole);
     let mut minihole = Vec::<Vector>::new();
     minihole.push((Vector::new(-0.5 ,6.5)+2.)*10.);
     minihole.push((Vector::new(0.5, 6.5)+2.)*10.);
     minihole.push((Vector::new(0., 7.5)+2.)*10.);
-    holes.push(minihole);
+    //holes.push(minihole);
     let mut bighole = Vec::<Vector>::new();
     bighole.push(Vector::new(-6., 6.)*10.);
     bighole.push(Vector::new(0., -2.)*10.);
     bighole.push(Vector::new(6., 6.)*10.);
-    //holes.push(bighole);
+    holes.push(bighole);
     let input_hole = Some(&mut holes);
     //let input_hole = None;
 
