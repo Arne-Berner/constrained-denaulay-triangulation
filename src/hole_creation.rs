@@ -49,7 +49,6 @@ pub fn create_holes(
     let mut triangles_to_remove = Vec::<usize>::new();
     // 5.4: Identify all the triangles in the polygon
     for constraint_edge_indices in &mut hole_indices {
-        constraint_edge_indices.reverse();
         triangle_set
             .get_triangles_in_polygon(&constraint_edge_indices, &mut triangles_to_remove)?;
     }
@@ -70,20 +69,6 @@ fn add_constrained_edge_to_triangulation(
     if let Some(_) = triangle_set.find_edge_info_for_vertices(endpoint_a_index, endpoint_b_index) {
         return Ok(());
     }
-    // pseudocode
-    // find all intersecting edges
-    // starting with the first one, create a quadrileteral, with the intersecting edge vertex as the start
-    // next is the endpoint_a
-    // other intersecting edge vertex
-    // last vertex of adjacent triangle
-    // if is convex: replace
-    // else: place at the beginning of the list
-    // add new edge to a list
-    // repeat for every one
-    // check delaunay constraint for endpoint a triangle with the added new edges
-    // repeat with every edge
-    // can there be new triangles, that are not delaunay that way? i don't think so
-
     // 5.3.1: Search for the triangle that contains the beginning of the new edge
     let triangle_containing_a = triangle_set
         .find_triangle_that_contains_edge_start_and_intersects(endpoint_a_index, endpoint_b_index);
@@ -91,6 +76,7 @@ fn add_constrained_edge_to_triangulation(
     let edge_endpoint_b = triangle_set.get_point_from_vertex(endpoint_b_index);
 
     // 5.3.2: Get all the triangle edges intersected by the constrained edge
+    println!("triangles 0: {:?}, triangle 1: {:?}", triangle_set.triangle_infos[0], triangle_set.triangle_infos[1]);
     let mut intersected_triangle_edges: VecDeque<Edge> = triangle_set.get_intersecting_edges(
         edge_endpoint_a,
         edge_endpoint_b,
@@ -99,7 +85,8 @@ fn add_constrained_edge_to_triangulation(
 
     let mut new_edges = Vec::<Edge>::new();
 
-    while let Some(intersected_triangle_edge) = intersected_triangle_edges.pop_front() {
+    while let Some(intersected_triangle_edge) = intersected_triangle_edges.pop_back() {
+        println!("edge: {:?}", intersected_triangle_edge);
         let current_edge_info = triangle_set
             .find_edge_info_for_vertices(
                 intersected_triangle_edge.vertex_a(),
@@ -155,7 +142,7 @@ fn add_constrained_edge_to_triangulation(
                     && *new_triangle_shared_point_a != edge_endpoint_a
                     && *new_triangle_shared_point_b != edge_endpoint_a
                 {
-                    intersected_triangle_edges.push_back(new_edge);
+                    intersected_triangle_edges.push_front(new_edge);
                 } else {
                     // except if it is the polygon edge
                     new_edges.push(new_edge);
@@ -166,7 +153,7 @@ fn add_constrained_edge_to_triangulation(
             }
         } else {
             // If they do not form a convex quadrilateral, then they need to be checked again later
-            intersected_triangle_edges.push_back(intersected_triangle_edge);
+            intersected_triangle_edges.push_front(intersected_triangle_edge);
         }
     }
 

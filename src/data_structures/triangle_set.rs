@@ -359,21 +359,17 @@ impl TriangleSet {
             for i in 0..3 {
                 let edge_vertex_a = self.triangle_infos[triangle_index].vertex_indices[i];
                 let edge_vertex_b = self.triangle_infos[triangle_index].vertex_indices[(i + 1) % 3];
-                // println!("every iteration edge vertex a and b {:#?}, {:#?}",edge_vertex_a, edge_vertex_b);
                 let current_a = self.points[edge_vertex_a];
                 let current_b = self.points[edge_vertex_b];
 
                 // if one point it the endpoint, then this is the end triangle
                 if current_a == line_endpoint_b || current_b == line_endpoint_b {
                     is_triangle_containing_b_found = true;
-                    // println!("break");
                     break;
                 }
 
                 if is_point_to_the_right_of_edge(&current_a, &current_b, &line_endpoint_b) {
                     tentative_adjacent_triangle = Some(i);
-                    // println!("edge vertex a and b {:#?}, {:#?}",edge_vertex_a, edge_vertex_b);
-
                     if intersection_between_lines(
                         &current_a,
                         &current_b,
@@ -382,29 +378,42 @@ impl TriangleSet {
                     )
                     .is_some()
                     {
-                        intersected_triangle_edges
-                            .push_back(Edge::new(edge_vertex_a, edge_vertex_b));
+                        let new_edge = Edge::new(edge_vertex_a, edge_vertex_b);
 
-                        break;
+                        // TODO THIS IS SHIT
+                        println!("new edge: {:?}", new_edge);
+                        if let Some(temp_edge) = intersected_triangle_edges.pop_back() {
+                            if temp_edge == new_edge {
+                                println!("reaching 387 in triangle set?");
+                                intersected_triangle_edges.push_back(new_edge);
+                            } else {
+                                has_crossed_edge = true;
+                                intersected_triangle_edges.push_back(temp_edge);
+                                intersected_triangle_edges.push_back(new_edge);
+                                triangle_index = self.triangle_infos[triangle_index]
+                                    .adjacent_triangle_indices[i]
+                                    .unwrap();
+                                break;
+                            }
+                        }
                     }
                 }
             }
 
             // Continue searching at a different adjacent triangle
-            // TODO might need some handling, but would change the searching here
-            // would need a stack
-            if let Some(tentative_adjacent_triangle) = tentative_adjacent_triangle {
-                triangle_index = self.triangle_infos[triangle_index].adjacent_triangle_indices
-                    [tentative_adjacent_triangle]
-                    .expect("This would result in an endless loop");
-            } else {
-                println!("test");
-                // it did not result in an endless loop?
-                //panic!("This results in an endless loop!")
+            if !has_crossed_edge {
+                if let Some(tentative_adjacent_triangle) = tentative_adjacent_triangle {
+                    triangle_index = self.triangle_infos[triangle_index].adjacent_triangle_indices
+                        [tentative_adjacent_triangle]
+                        .expect("This would result in an endless loop");
+                } else {
+                    println!("Is it an endless loop?");
+                }
             }
         }
         intersected_triangle_edges
     }
+
     fn get_triangle_from_triangle_index(&self, triangle_index: usize) -> Triangle {
         Triangle::new(
             self.points[self.triangle_infos[triangle_index].vertex_indices[0]],

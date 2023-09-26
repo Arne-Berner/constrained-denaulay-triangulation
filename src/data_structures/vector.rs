@@ -68,6 +68,16 @@ impl std::ops::Add<Vector> for Vector {
         }
     }
 }
+impl std::ops::Add<f32> for Vector {
+    type Output = Self;
+    #[inline]
+    fn add(self, rhs: f32) -> Self {
+        Self {
+            x: self.x.add(rhs),
+            y: self.y.add(rhs),
+        }
+    }
+}
 
 impl std::ops::Sub<Vector> for Vector {
     type Output = Self;

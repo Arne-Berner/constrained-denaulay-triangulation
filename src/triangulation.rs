@@ -385,18 +385,6 @@ pub fn swap_edges(
     Ok((first_new_adjacent, second_new_adjacent))
 }
 
-fn get_triangles(triangle_set: &TriangleSet) -> Vec<Triangle> {
-    let mut output_triangles = Vec::with_capacity(triangle_set.triangle_count() - 1);
-    for triangle_info in &triangle_set.triangle_infos {
-        output_triangles.push(Triangle::new(
-            triangle_set.get_point_from_vertex(triangle_info.vertex_indices[0]),
-            triangle_set.get_point_from_vertex(triangle_info.vertex_indices[1]),
-            triangle_set.get_point_from_vertex(triangle_info.vertex_indices[2]),
-        ))
-    }
-    output_triangles
-}
-
 fn get_triangles_discarding_holes(
     triangle_set: &TriangleSet,
     triangles_to_remove: Vec<usize>,

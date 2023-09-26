@@ -17,20 +17,35 @@ mod hole_creation;
 /// # Examples
 /// This example uses an easy convex polygon.
 /// ```
-/// let mut input_points = Vec::new();
-/// input_points.push(Vector::new(-0., 7.0));
-/// input_points.push(Vector::new(-5., 5.));
-/// input_points.push(Vector::new(5., 5.));
-/// input_points.push(Vector::new(-2., 3.));
-/// input_points.push(Vector::new(3., 1.));
-/// input_points.push(Vector::new(-4., -1.));
-/// input_points.push(Vector::new(1., -2.));
-/// input_points.push(Vector::new(-6., -4.));
-/// input_points.push(Vector::new(5., -4.));
-/// let triangles = match triangulate(&mut input_points, None, None){
-///     Ok(result) => result,
-///     Err(err) => panic!("triangulation failed!{:?}", err),
-/// };
+///  let mut input_points = Vec::new();
+///  input_points.push(Vector::new(-0., 7.0)*10.); //
+///  input_points.push(Vector::new(-5., 5.)*10.); //
+///  input_points.push(Vector::new(5., 5.)*10.); //
+///  input_points.push(Vector::new(-1., 3.)*10.); //
+///  input_points.push(Vector::new(3., 1.)*10.); //
+///  input_points.push(Vector::new(-4., -1.)*10.); //
+///  input_points.push(Vector::new(1., -2.)*10.); //
+///  input_points.push(Vector::new(-6., -4.)*10.); //
+///  input_points.push(Vector::new(5., -4.)*10.); //
+///  let mut holes: Vec<Vec<Vector>> = vec![];
+///  let mut minihole = Vec::<Vector>::new();
+///  minihole.push(Vector::new(-0.5 ,6.5)*10.);
+///  minihole.push(Vector::new(0.5, 6.5)*10.);
+///  minihole.push(Vector::new(0., 7.5)*10.);
+///  holes.push(minihole);
+///  let mut bighole = Vec::<Vector>::new();
+///  bighole.push(Vector::new(-6., 6.)*10.);
+///  bighole.push(Vector::new(0., -2.)*10.);
+///  bighole.push(Vector::new(6., 6.)*10.);
+///  holes.push(bighole);
+///  let input_hole = Some(&mut holes);
+///  //let input_hole = None;
+///
+///  res.0 = match triangulate(&mut input_points, input_hole, None) {
+///      Ok(result) => result,
+///      Err(err) => panic!("triangulation failed!{:?}", err),
+///  };
+///  println!("{}",res.0.len());
 /// assert!(triangle.len() > 0);
 /// ```
 /// Even more complex are no problem either. (such as with collinear lines to the super triangle and each other.)

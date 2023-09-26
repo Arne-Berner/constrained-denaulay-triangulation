@@ -1,4 +1,4 @@
-#[derive(Debug)]
+#[derive(Debug, PartialEq)]
 pub struct Edge {
     edge_vertex_a: usize,
     edge_vertex_b: usize,
