@@ -86,7 +86,6 @@ fn add_constrained_edge_to_triangulation(
     let mut new_edges = Vec::<Edge>::new();
 
     while let Some(intersected_triangle_edge) = intersected_triangle_edges.pop_back() {
-        println!("edge: {:?}", intersected_triangle_edge);
         let current_edge_info = triangle_set
             .find_edge_info_for_vertices(
                 intersected_triangle_edge.vertex_a(),
