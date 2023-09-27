@@ -17,3 +17,11 @@ Also bevy was a heavy inspiration for some data types, but has been stripped to 
 - [ ] test bigger than first polygon input
 - [ ] inline functions
 - [ ] check what happens if hole point and polygon point are the same
+- [ ] use robust crate for float
+- [ ] what happens, if any new point is on the line of another triangle?
+- [ ] safe the contour of the point cloud, for an "hole out of bounds" error
+
+
+
+### Holes outside of bounds
+If the holes are stretched out outside of the point cloud, then they cannot be triangulated, unless we would keep track of all the actual connections to those very nodes. That would make the algorithm much slower.
