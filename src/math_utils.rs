@@ -76,29 +76,6 @@ pub fn is_point_to_the_left_of_edge(
     !is_point_to_the_right_of_edge(edge_endpoint_a, edge_endpoint_b, point)
 }
 
-/// Checks whether a point is contained in a triangle. The vertices of the triangle must be sorted counter-clockwise.
-///
-/// # Arguments
-///
-/// * `triangle_p0` - The first vertex of the triangle.
-/// * `triangle_p1` - The second vertex of the triangle.
-/// * `triangle_p2` - The third vertex of the triangle.
-/// * `point_to_check` - The point that may be contained.
-///
-/// # Returns
-///
-/// Returns true if the point is contained in the triangle; false otherwise.
-pub fn is_point_inside_triangle(
-    triangle_p0: &Vector,
-    triangle_p1: &Vector,
-    triangle_p2: &Vector,
-    point_to_check: &Vector,
-) -> bool {
-    is_point_to_the_left_of_edge(triangle_p0, triangle_p1, point_to_check)
-        && is_point_to_the_left_of_edge(triangle_p1, triangle_p2, point_to_check)
-        && is_point_to_the_left_of_edge(triangle_p2, triangle_p0, point_to_check)
-}
-
 // https://gamedev.stackexchange.com/questions/71328/how-can-i-add-and-subtract-convex-polygons
 pub fn is_point_inside_circumcircle(triangle: Triangle, point_to_check: Vector) -> bool {
 			// This first part will simplify how we calculate the determinant

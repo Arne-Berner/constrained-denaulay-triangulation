@@ -28,7 +28,4 @@ impl EdgeInfo {
     pub fn vertex_b(&self) -> usize {
         self.edge_vertex_b
     }
-    pub fn edge(&self) -> (usize, usize) {
-        (self.edge_vertex_a, self.edge_vertex_b)
-    }
 }

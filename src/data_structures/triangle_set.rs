@@ -140,23 +140,6 @@ impl TriangleSet {
         }
     }
 
-    pub fn replace_adjacent_vertices(
-        &mut self,
-        triangle_index: usize,
-        new_adjacent_indices: [Option<usize>; 3],
-    ) {
-        self.triangle_infos[triangle_index].adjacent_triangle_indices = new_adjacent_indices;
-    }
-
-    pub fn replace_vertex_with_vertex(
-        &mut self,
-        triangle_index: usize,
-        vertex_position: usize,
-        new_vertex: usize,
-    ) {
-        self.triangle_infos[triangle_index].vertex_indices[vertex_position] = new_vertex;
-    }
-
     /// This method gets all the triangle indices for the triangles in a polygon outline and returns those indices.
     pub fn get_triangles_in_polygon(
         &self,
@@ -415,13 +398,5 @@ impl TriangleSet {
             }
         }
         intersected_triangle_edges
-    }
-
-    fn get_triangle_from_triangle_index(&self, triangle_index: usize) -> Triangle {
-        Triangle::new(
-            self.points[self.triangle_infos[triangle_index].vertex_indices[0]],
-            self.points[self.triangle_infos[triangle_index].vertex_indices[1]],
-            self.points[self.triangle_infos[triangle_index].vertex_indices[2]],
-        )
     }
 }

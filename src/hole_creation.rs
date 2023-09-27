@@ -2,7 +2,7 @@ use std::collections::VecDeque;
 
 use crate::{
     data_structures::{
-        edge::Edge, edge_info::EdgeInfo, error::CustomError, triangle_set::TriangleSet,
+        edge::Edge, error::CustomError, triangle_set::TriangleSet,
         vector::Vector,
     },
     math_utils::{

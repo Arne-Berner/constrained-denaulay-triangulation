@@ -44,6 +44,6 @@ fn main() {
         Ok(result) => result,
         Err(err) => panic!("triangulation failed!{:?}", err),
     };
-    //println!("{:?}",a );
+    println!("{:?}",a );
 
 }

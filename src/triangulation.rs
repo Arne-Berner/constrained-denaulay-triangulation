@@ -6,7 +6,7 @@ use crate::{
     },
     hole_creation::{create_holes, get_supertriangle_triangles},
     math_utils::is_point_inside_circumcircle,
-    normalize::{self, denormalize_points, normalize_points, Bounds},
+    normalize::{denormalize_points, normalize_points},
 };
 
 pub struct TriangleIndexPair {
@@ -203,7 +203,7 @@ pub fn triangulate_point(
     if let Ok(containing_triangle_index) = triangle_set
         .find_triangle_that_contains_point(point_to_insert, triangle_set.triangle_count() - 1)
     {
-        let mut containing_triangle = triangle_set.get_triangle_info(containing_triangle_index);
+        let containing_triangle = triangle_set.get_triangle_info(containing_triangle_index);
 
         // 5. Insert new point in triangulation and create 2 new triangles off of it
         // all the triangles take inserted point as there vertex 0, so that adjacent is 1
