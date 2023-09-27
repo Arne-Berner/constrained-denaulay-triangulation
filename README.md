@@ -7,6 +7,7 @@ Also bevy was a heavy inspiration for some data types, but has been stripped to 
 
 # TODO
 - [ ] remove all TODO comments
+- [ ] refactor things into functions, so that they can be tested (e.g. swap)
 - [ ] only use errors to the outside, that are relevant to the user
 - [ ] make the API just the "triangulate" function
 - [ ] derive all the important derives
