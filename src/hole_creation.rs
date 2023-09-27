@@ -25,14 +25,14 @@ pub fn create_holes(
     for mut hole in holes {
         // 5.1: Normalize
         let (normalized_hole, _) = normalize_points(&mut hole, Some(bounds));
-        let mut polygon_indices = Vec::new();
+        let mut polygon_vertices = Vec::new();
 
         for point_to_insert in normalized_hole {
             // 5.2: Add the points to the Triangle set
-            polygon_indices.push(triangulate_point(&mut triangle_set, point_to_insert)?.value());
+            polygon_vertices.push(triangulate_point(&mut triangle_set, point_to_insert)?.value());
         }
 
-        hole_indices.push(polygon_indices);
+        hole_indices.push(polygon_vertices);
     }
 
     for constraint_edge_indices in &hole_indices {
