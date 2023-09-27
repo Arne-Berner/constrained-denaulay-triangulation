@@ -15,6 +15,11 @@ impl Vector {
         (self.x * rhs.y) - (self.y * rhs.x)
     }
 }
+impl From<(f32, f32)> for Vector {
+    fn from(value: (f32, f32)) -> Self {
+        Vector::new(value.0, value.1)
+    }
+}
 
 impl std::ops::Div<f32> for Vector {
     type Output = Self;
