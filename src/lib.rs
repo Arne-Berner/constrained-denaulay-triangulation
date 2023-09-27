@@ -3,11 +3,11 @@
 pub use data_structures::vector::Vector;
 pub use data_structures::{error::CustomError, triangle::Triangle};
 
-mod triangulation;
 mod data_structures;
+mod hole_creation;
 mod math_utils;
 mod normalize;
-mod hole_creation;
+mod triangulation;
 
 /// This will triangulate any polygon using the delaunay constraint
 ///
@@ -17,38 +17,45 @@ mod hole_creation;
 /// # Examples
 /// This example uses an easy convex polygon.
 /// ```
-///  let mut input_points = Vec::new();
-///  input_points.push(Vector::new(-0., 7.0)*10.); //
-///  input_points.push(Vector::new(-5., 5.)*10.); //
-///  input_points.push(Vector::new(5., 5.)*10.); //
-///  input_points.push(Vector::new(-1., 3.)*10.); //
-///  input_points.push(Vector::new(3., 1.)*10.); //
-///  input_points.push(Vector::new(-4., -1.)*10.); //
-///  input_points.push(Vector::new(1., -2.)*10.); //
-///  input_points.push(Vector::new(-6., -4.)*10.); //
-///  input_points.push(Vector::new(5., -4.)*10.); //
-///  let mut holes: Vec<Vec<Vector>> = vec![];
-///  let mut minihole = Vec::<Vector>::new();
-///  minihole.push(Vector::new(-0.5 ,6.5)*10.);
-///  minihole.push(Vector::new(0.5, 6.5)*10.);
-///  minihole.push(Vector::new(0., 7.5)*10.);
-///  holes.push(minihole);
-///  let mut bighole = Vec::<Vector>::new();
-///  bighole.push(Vector::new(-6., 6.)*10.);
-///  bighole.push(Vector::new(0., -2.)*10.);
-///  bighole.push(Vector::new(6., 6.)*10.);
-///  holes.push(bighole);
-///  let input_hole = Some(&mut holes);
-///  //let input_hole = None;
+/// use constrained_denaulay_triangulation::{triangulate, Vector};
 ///
-///  res.0 = match triangulate(&mut input_points, input_hole, None) {
-///      Ok(result) => result,
-///      Err(err) => panic!("triangulation failed!{:?}", err),
-///  };
-/// assert!(triangle.len() > 0);
+/// fn main() {
+///     let mut input_points = Vec::new();
+///     input_points.push(Vector::new(-0., 7.0) * 10.); //
+///     input_points.push(Vector::new(-5., 5.) * 10.); //
+///     input_points.push(Vector::new(5., 5.) * 10.); //
+///     input_points.push(Vector::new(-1., 3.) * 10.); //
+///     input_points.push(Vector::new(3., 1.) * 10.); //
+///     input_points.push(Vector::new(-4., -1.) * 10.); //
+///     input_points.push(Vector::new(1., -2.) * 10.); //
+///     input_points.push(Vector::new(-6., -4.) * 10.); //
+///     input_points.push(Vector::new(5., -4.) * 10.); //
+///     let mut holes: Vec<Vec<Vector>> = vec![];
+///     let mut minihole = Vec::<Vector>::new();
+///     minihole.push(Vector::new(-1.5, 3.5) * 10.);
+///     minihole.push(Vector::new(-0.5, 3.5) * 10.);
+///     minihole.push(Vector::new(-1., 2.5) * 10.);
+///     holes.push(minihole);
+///     let mut bighole = Vec::<Vector>::new();
+///     bighole.push(Vector::new(-4., 4.) * 10.);
+///     bighole.push(Vector::new(0., -2.) * 10.);
+///     bighole.push(Vector::new(4., 4.) * 10.);
+///     holes.push(bighole);
+///     let input_hole = Some(&mut holes);
+///
+///     let a = match triangulate(&mut input_points, input_hole, None) {
+///         Ok(result) => result,
+///         Err(err) => panic!("triangulation failed!{:?}", err),
+///     };
+///     assert!(a.len()>0);
+/// }
+///
 /// ```
 /// Even more complex are no problem either. (such as with collinear lines to the super triangle and each other.)
 /// ```
+/// use constrained_denaulay_triangulation::{triangulate, Vector};
+///
+/// fn main() {
 /// let mut input_points = Vec::new();
 /// input_points.push(Vector::new(1., 1.));
 /// input_points.push(Vector::new(3., 4.));
@@ -63,9 +70,20 @@ mod hole_creation;
 ///     Err(err) => panic!("triangulation failed!{:?}", err),
 /// };
 /// assert!(triangles.len() > 0);
+/// }
 /// ```
 /// # Panics
 /// The triangulation might panic if the holes are 50x the size of the polygon to be triangulated.
-pub fn triangulate(input_points:&mut Vec<Vector>, holes:Option<&mut Vec<Vec<Vector>>>, maximum_triangle_area:Option<f32>)-> Result<Vec<Triangle>, CustomError> {
-    Ok(triangulation::triangulate(input_points, holes, maximum_triangle_area)?)
+/// # Known limitations
+/// The function will not work with holes that are bigger than the point cloud or outside of the point cloud
+pub fn triangulate(
+    input_points: &mut Vec<Vector>,
+    holes: Option<&mut Vec<Vec<Vector>>>,
+    maximum_triangle_area: Option<f32>,
+) -> Result<Vec<Triangle>, CustomError> {
+    Ok(triangulation::triangulate(
+        input_points,
+        holes,
+        maximum_triangle_area,
+    )?)
 }

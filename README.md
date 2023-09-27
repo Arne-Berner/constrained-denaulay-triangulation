@@ -6,7 +6,6 @@ I mostly used [jailbrokengames code](https://github.com/QThund/ConstrainedDelaun
 Also bevy was a heavy inspiration for some data types, but has been stripped to be smaller and more efficient.
 
 # TODO
-- [ ] remove clippy problems
 - [ ] refactor things into functions, so that they can be tested (e.g. swap)
 - [ ] remove all TODO comments
 - [ ] Polygons should not need to be in a specific order
