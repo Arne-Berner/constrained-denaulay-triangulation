@@ -48,7 +48,7 @@ pub fn denormalize_points(input_points: &mut Vec<Vector>, bounds: &Bounds)->Vec<
 }
 
 #[test]
-fn test_normalize(){
+fn normalize_points_without_bounds(){
     let mut input_points = Vec::new();
     input_points.push(Vector::new(-0., 5.0)); 
     input_points.push(Vector::new(-5., 0.)); 
@@ -64,7 +64,7 @@ fn test_normalize(){
 }
 
 #[test]
-fn test_normalize_with_bounds(){
+fn normalize_points_with_given_bounds(){
     let bounds = Bounds{min: Vector::new(-10., -10.), max:Vector::new(10.,10.)};
     let mut input_points = Vec::new();
     input_points.push(Vector::new(-0., 5.0)); 
@@ -78,4 +78,20 @@ fn test_normalize_with_bounds(){
     expected_points.push(Vector::new(0.25, 0.5)); 
     expected_points.push(Vector::new(0.75, 0.25)); 
     assert_eq!(output, (expected_points, expected_bounds));
+}
+
+#[test]
+fn denormalize_points_with_given_bounds(){
+    let mut input_points= Vec::new();
+    input_points.push(Vector::new(0.5, 0.75)); 
+    input_points.push(Vector::new(0.25, 0.5)); 
+    input_points.push(Vector::new(0.75, 0.25)); 
+    let input_bounds = Bounds{min: Vector::new(-10., -10.), max:Vector::new(10.,10.)};
+
+    let mut expected_points = Vec::new();
+    expected_points.push(Vector::new(-0., 5.0)); 
+    expected_points.push(Vector::new(-5., 0.)); 
+    expected_points.push(Vector::new(5., -5.)); 
+    let output = denormalize_points(&mut input_points, &input_bounds);
+    assert_eq!(output, expected_points);
 }
