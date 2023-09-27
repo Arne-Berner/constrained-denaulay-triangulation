@@ -6,13 +6,14 @@ I mostly used [jailbrokengames code](https://github.com/QThund/ConstrainedDelaun
 Also bevy was a heavy inspiration for some data types, but has been stripped to be smaller and more efficient.
 
 # TODO
-- [ ] look for edge cases (hole outside of polygon, half/half, bigger than poly, hole in hole, hole overlapping)
-- [ ] remove all TODO comments
+- [ ] remove clippy problems
 - [ ] refactor things into functions, so that they can be tested (e.g. swap)
+- [ ] remove all TODO comments
+- [ ] Polygons should not need to be in a specific order
+- [ ] look for edge cases (hole outside of polygon, half/half, bigger than poly, hole in hole, hole overlapping)
 - [ ] only use errors to the outside, that are relevant to the user
 - [ ] make the API just the "triangulate" function
 - [ ] derive all the important derives
-- [ ] test squares at input (they might be the reason for the endless loop)
 - [ ] test bigger than first polygon input
 - [ ] inline functions
 - [ ] check what happens if hole point and polygon point are the same
