@@ -45,7 +45,6 @@ mod hole_creation;
 ///      Ok(result) => result,
 ///      Err(err) => panic!("triangulation failed!{:?}", err),
 ///  };
-///  println!("{}",res.0.len());
 /// assert!(triangle.len() > 0);
 /// ```
 /// Even more complex are no problem either. (such as with collinear lines to the super triangle and each other.)

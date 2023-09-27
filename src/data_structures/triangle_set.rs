@@ -381,10 +381,8 @@ impl TriangleSet {
                         let new_edge = Edge::new(edge_vertex_a, edge_vertex_b);
 
                         // TODO THIS IS SHIT
-                        println!("new edge: {:?}", new_edge);
                         if let Some(temp_edge) = intersected_triangle_edges.pop_back() {
                             if temp_edge == new_edge {
-                                println!("reaching 387 in triangle set?");
                                 intersected_triangle_edges.push_back(new_edge);
                             } else {
                                 has_crossed_edge = true;
@@ -395,6 +393,14 @@ impl TriangleSet {
                                     .unwrap();
                                 break;
                             }
+                        } else {
+                                has_crossed_edge = true;
+                                intersected_triangle_edges.push_back(new_edge);
+                                triangle_index = self.triangle_infos[triangle_index]
+                                    .adjacent_triangle_indices[i]
+                                    .unwrap();
+                                break;
+
                         }
                     }
                 }
