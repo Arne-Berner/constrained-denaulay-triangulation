@@ -76,7 +76,6 @@ fn add_constrained_edge_to_triangulation(
     let edge_endpoint_b = triangle_set.get_point_from_vertex(endpoint_b_index);
 
     // 5.3.2: Get all the triangle edges intersected by the constrained edge
-    println!("triangles 0: {:?}, triangle 1: {:?}", triangle_set.triangle_infos[0], triangle_set.triangle_infos[1]);
     let mut intersected_triangle_edges: VecDeque<Edge> = triangle_set.get_intersecting_edges(
         edge_endpoint_a,
         edge_endpoint_b,
