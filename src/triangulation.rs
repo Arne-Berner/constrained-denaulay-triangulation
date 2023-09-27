@@ -274,6 +274,7 @@ pub fn triangulate_point(
     }
 }
 
+/// This will swap the adjacent edge between two triangles.
 pub fn swap_edges(
     index_pair: &TriangleIndexPair,
     triangle_set: &mut TriangleSet,
@@ -283,7 +284,6 @@ pub fn swap_edges(
     let adjacent_info = triangle_set.get_triangle_info(index_pair.adjacent);
     let p = current_info.vertex_indices[(shared_vertex_index + 2) % 3];
     let p2 = current_info.vertex_indices[(shared_vertex_index + 1) % 3];
-    // assumption (needs the FIRST shared vertex of current)
     let shared_vertex = current_info.vertex_indices[shared_vertex_index];
     let mut adj_shared_vertex_index = 4; // out of bounds
     for idx in 0..3 {
@@ -302,7 +302,6 @@ pub fn swap_edges(
     let opposite_vertex = adjacent_info.vertex_indices[(adj_shared_vertex_index + 1) % 3];
     let a2 = current_info.adjacent_triangle_indices[(shared_vertex_index + 1) % 3];
     let new_adjacent = TriangleInfo::new([
-        // Assumption
         p,
         opposite_vertex,
         p2,
@@ -310,7 +309,6 @@ pub fn swap_edges(
     .with_adjacent(Some(index_pair.current), second_new_adjacent, a2);
     triangle_set.replace_triangle(index_pair.adjacent, &new_adjacent);
     let new_current = TriangleInfo::new([
-        // Assumption
         p,
         shared_vertex,
         opposite_vertex,
@@ -361,4 +359,27 @@ fn get_triangles_discarding_holes(
         }
     }
     output_triangles
+}
+
+
+#[test]
+fn swapping_edges()-> Result<(),CustomError>{
+     let mut triangle_set = TriangleSet::new(2);
+     triangle_set.add_point(Vector::new(0.0, 0.0) * 10.); //
+     triangle_set.add_point(Vector::new(0., 1.) * 10.); //
+     triangle_set.add_point(Vector::new(1., 0.) * 10.); //
+     triangle_set.add_point(Vector::new(1., 1.) * 10.); //
+     let triangle_info_current = TriangleInfo::new([0,1,2]).with_adjacent(None, Some(1), None);
+     let triangle_info_adjacent = TriangleInfo::new([3,2,1]).with_adjacent(None, Some(0), None);
+     triangle_set.add_triangle_info(triangle_info_current);
+     triangle_set.add_triangle_info(triangle_info_adjacent);
+     let index_pair = TriangleIndexPair{adjacent: 1, current: 0};
+     swap_edges(&index_pair,&mut triangle_set, 1)?;
+     let expected_triangle_info_current = TriangleInfo::new([0,1,3]).with_adjacent(None, None, Some(1));
+     let expected_triangle_info_adjacent = TriangleInfo::new([0,3,2]).with_adjacent(Some(0), None, None);
+     let actual_current = triangle_set.get_triangle_info(0);
+     let actual_adjacent = triangle_set.get_triangle_info(1);
+     assert_eq!(expected_triangle_info_current, actual_current);
+     assert_eq!(expected_triangle_info_adjacent, actual_adjacent);
+     Ok(())
 }
