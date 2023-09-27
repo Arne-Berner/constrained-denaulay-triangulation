@@ -153,6 +153,7 @@ pub fn intersection_between_lines(
     endpoint_b2: &Vector,
 ) -> Option<Vector> {
     // https://stackoverflow.com/questions/4543506/algorithm-for-intersection-of-2-lines
+    // TODO It would be great, if there was no intersection, if they started at the same point
     let mut intersection_point = Vector::new(f32::MAX, f32::MAX);
 
     let is_line1_vertical = endpoint_b1.x == endpoint_a1.x;
