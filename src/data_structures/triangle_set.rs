@@ -394,13 +394,12 @@ impl TriangleSet {
                                 break;
                             }
                         } else {
-                                has_crossed_edge = true;
-                                intersected_triangle_edges.push_back(new_edge);
-                                triangle_index = self.triangle_infos[triangle_index]
-                                    .adjacent_triangle_indices[i]
-                                    .unwrap();
-                                break;
-
+                            has_crossed_edge = true;
+                            intersected_triangle_edges.push_back(new_edge);
+                            triangle_index = self.triangle_infos[triangle_index]
+                                .adjacent_triangle_indices[i]
+                                .unwrap();
+                            break;
                         }
                     }
                 }
@@ -412,8 +411,6 @@ impl TriangleSet {
                     triangle_index = self.triangle_infos[triangle_index].adjacent_triangle_indices
                         [tentative_adjacent_triangle]
                         .expect("This would result in an endless loop");
-                } else {
-                    println!("Is it an endless loop?");
                 }
             }
         }
