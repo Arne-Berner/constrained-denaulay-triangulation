@@ -7,6 +7,7 @@ Also bevy was a heavy inspiration for some data types, but has been stripped to 
 
 # TODO
 - [ ] refactor things into functions, so that they can be tested (e.g. swap)
+- [ ] use impl trait Vector instead, so that consuming libs can impl Vector for their Vec
 - [ ] remove all TODO comments
 - [ ] Polygons should not need to be in a specific order
 - [ ] look for edge cases (hole outside of polygon, half/half, bigger than poly, hole in hole, hole overlapping)
